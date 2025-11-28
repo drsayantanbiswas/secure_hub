@@ -193,8 +193,8 @@ export default function PassLockPage() {
                   </span>
                 </Button>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary p-3 rounded-md">
-                <Info className="h-5 w-5 shrink-0" />
+              <div className="flex items-center gap-2 text-sm text-cyan-200 bg-cyan-500/10 p-3 rounded-md">
+                <Info className="h-5 w-5 shrink-0 text-cyan-400" />
                 <span>
                   <strong>Privacy First:</strong> Password analysis and breach checks are
                   done locally in your browser. Nothing is ever sent to a server.
@@ -359,6 +359,8 @@ export default function PassLockPage() {
     </div>
   );
 }
+
+    
 
     
 
