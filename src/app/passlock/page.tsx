@@ -17,11 +17,8 @@ import {
   Sparkles,
   ShieldAlert,
 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { PasswordStrength, PasswordRequirements, checkPasswordStrength } from "@/lib/utils";
 import { PasswordGeneratorModal } from "@/components/passlock/password-generator-modal";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import {
   AnalyzePasswordOutput,
 } from "@/ai/schemas/password-analysis-schemas";
@@ -30,6 +27,7 @@ import {
 } from "@/ai/flows/password-analysis";
 import CharacterDistributionChart from "@/components/passlock/character-distribution-chart";
 import EntropyBar from "@/components/passlock/entropy-bar";
+import { checkPasswordStrength } from "@/lib/utils";
 
 const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
   <div className={`flex items-center gap-2 transition-colors ${met ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -43,10 +41,10 @@ const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
 );
 
 const breachCheckSteps = [
-    "Analyzing password hash...",
+    "Hashing password locally (SHA-1)...",
     "Querying k-anonymity service...",
-    "Searching 12.1B leaked assets...",
-    "Checking against known breaches...",
+    "Searching 12.1B+ leaked assets...",
+    "Checking hash suffix against results...",
 ];
 
 
@@ -60,7 +58,7 @@ export default function PassLockPage() {
 
   const [currentBreachStep, setCurrentBreachStep] = useState(0);
 
-  const { strength, requirements, entropy, charDistribution } = useMemo(() => checkPasswordStrength(password), [password]);
+  const { requirements, entropy, charDistribution } = useMemo(() => checkPasswordStrength(password), [password]);
   
   const [isAiPending, startAiTransition] = useTransition();
   const [aiAnalysis, setAiAnalysis] = useState<AnalyzePasswordOutput | null>(
@@ -73,7 +71,7 @@ export default function PassLockPage() {
         setCurrentBreachStep(0);
         interval = setInterval(() => {
             setCurrentBreachStep(prev => (prev + 1) % breachCheckSteps.length);
-        }, 700);
+        }, 1000);
     }
     return () => {
         if(interval) clearInterval(interval);
@@ -98,24 +96,54 @@ export default function PassLockPage() {
     };
   }, [password, entropy]);
   
-  const handleBreachCheck = () => {
+  const checkBreach = async (password: string) => {
+    const sha1 = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(password));
+    const hash = Array.from(new Uint8Array(sha1)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  
+    const prefix = hash.slice(0, 5);
+    const suffix = hash.slice(5);
+  
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch breach data from HIBP API.');
+    }
+    const text = await response.text();
+    
+    const lines = text.split("\n");
+    
+    for (const line of lines) {
+      const [hashSuffix, count] = line.split(":");
+      if (hashSuffix === suffix) {
+        return { breached: true, count: parseInt(count) };
+      }
+    }
+  
+    return { breached: false, count: 0 };
+  }
+
+  const handleBreachCheck = async () => {
     if (!password) return;
     setBreachStatus('checking');
     setBreachCount(0);
 
-    setTimeout(() => {
-      // Mock breach check based on HaveIBeenPwned API response format
-      if (password.toLowerCase() === 'password123') {
-        setBreachCount(3156648);
-        setBreachStatus('atRisk');
-      } else if (password.includes('123')) {
-        setBreachCount(Math.floor(Math.random() * 10000) + 100);
-        setBreachStatus('atRisk');
-      } else {
-        setBreachCount(0);
-        setBreachStatus('safe');
-      }
-    }, 2800);
+    try {
+        const result = await checkBreach(password);
+        if (result.breached) {
+            setBreachCount(result.count);
+            setBreachStatus('atRisk');
+        } else {
+            setBreachCount(0);
+            setBreachStatus('safe');
+        }
+    } catch (error) {
+        console.error("Breach check failed:", error);
+        setBreachStatus('idle'); // Or an error state
+        toast({
+            variant: "destructive",
+            title: "Breach Check Failed",
+            description: "Could not connect to the HaveIBeenPwned API. Please try again later.",
+        });
+    }
   };
   
   const handleCopyToClipboard = () => {
@@ -169,7 +197,7 @@ export default function PassLockPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary p-3 rounded-md">
                 <Info className="h-5 w-5 shrink-0" />
                 <span>
-                  <strong>Privacy First:</strong> Password analysis is
+                  <strong>Privacy First:</strong> Password analysis and breach checks are
                   done locally in your browser. Nothing is ever sent to a server.
                 </span>
               </div>
@@ -273,6 +301,7 @@ export default function PassLockPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/> Breach Check</CardTitle>
+                    <CardDescription>Securely check against 12B+ leaked records using k-anonymity.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Button onClick={handleBreachCheck} disabled={breachStatus === 'checking' || !password} className="w-full">
@@ -289,22 +318,23 @@ export default function PassLockPage() {
                         {breachStatus === 'checking' && (
                             <div className="text-center w-full">
                                 <Loader2 className="h-10 w-10 mx-auto text-primary animate-spin mb-4"/>
-                                <p className="font-mono text-sm text-primary">{breachCheckSteps[currentBreachStep]}</p>
+                                <p className="font-semibold text-primary">Checking breach archives securely...</p>
+                                <p className="font-mono text-sm text-muted-foreground mt-2">{breachCheckSteps[currentBreachStep]}</p>
                             </div>
                         )}
                         {breachStatus === 'safe' && (
                             <div className="text-green-600 dark:text-green-400">
                                 <CheckCircle className="h-12 w-12 mx-auto mb-4"/>
                                 <h3 className="text-xl font-bold">SAFE! NOT FOUND IN BREACHES</h3>
-                                <p className="text-sm mt-1">This password hasn't been found in any of the breaches we've analyzed.</p>
+                                <p className="text-sm mt-1">This password was not found in over 12 billion breach records.</p>
                             </div>
                         )}
                          {breachStatus === 'atRisk' && (
                             <div className="text-destructive">
                                 <XCircle className="h-12 w-12 mx-auto mb-4"/>
                                 <h3 className="text-xl font-bold">WARNING! FOUND IN BREACHES</h3>
-                                <p className="text-sm mt-1">This password appeared in <span className="font-bold">{breachCount.toLocaleString()}</span> known breaches.</p>
-                                <p className="text-xs mt-1">We strongly recommend changing it immediately.</p>
+                                <p className="text-sm mt-1">This password has been seen <span className="font-bold">{breachCount.toLocaleString()}</span> times in data breaches.</p>
+                                <p className="text-xs mt-1 font-semibold">It should be considered compromised. Change it immediately.</p>
                             </div>
                         )}
                     </div>
