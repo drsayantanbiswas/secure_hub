@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/layout/header";
 import { AppFooter } from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { FirebaseClientProvider } from "@/firebase";
 
 export const metadata: Metadata = {
   title: "SecureHub - Your Complete Security Partner",
@@ -35,16 +36,18 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen flex-col">
-            <AppHeader />
-            <main className="flex-1">{children}</main>
-            <AppFooter />
-          </div>
-          <Toaster />
+          <FirebaseClientProvider>
+            <div className="flex min-h-screen flex-col">
+              <AppHeader />
+              <main className="flex-1">{children}</main>
+              <AppFooter />
+            </div>
+            <Toaster />
+          </FirebaseClientProvider>
         </ThemeProvider>
       </body>
     </html>

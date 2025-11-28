@@ -31,8 +31,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { ThemeToggle } from "../theme-toggle";
+import { useUser, useAuth } from "@/firebase/provider";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Home },
@@ -45,7 +47,25 @@ const navLinks = [
 export function AppHeader() {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
-  const avatar = PlaceHolderImages.find((img) => img.id === "avatar-1");
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    if (auth) {
+      await signOut(auth);
+      router.push("/");
+    }
+  };
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return "U";
+    const names = name.split(" ");
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`;
+    }
+    return name[0];
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -114,74 +134,90 @@ export function AppHeader() {
           </SheetContent>
         </Sheet>
         <Link href="/" className="flex items-center space-x-2 md:hidden">
-            <SecureHubLogo className="h-6 w-6" />
-            <span className="font-bold">SecureHub</span>
+          <SecureHubLogo className="h-6 w-6" />
+          <span className="font-bold">SecureHub</span>
         </Link>
-
 
         <div className="flex flex-1 items-center justify-end space-x-2">
           <ThemeToggle />
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  {avatar && (
-                    <AvatarImage
-                      src={avatar.imageUrl}
-                      alt="User avatar"
-                      data-ai-hint={avatar.imageHint}
-                    />
-                  )}
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
+          {!isUserLoading && user && (
+            <Button variant="ghost" size="icon">
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Notifications</span>
+            </Button>
+          )}
+
+          {isUserLoading ? (
+            <div className="h-8 w-8 rounded-full bg-secondary" />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
+                  <Avatar className="h-8 w-8">
+                    {user.photoURL && <AvatarImage src={user.photoURL} alt="User avatar" />}
+                    <AvatarFallback>
+                      {getInitials(user.displayName)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user.displayName || "User"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard">
+                      <BarChart className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile#settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <LifeBuoy className="mr-2 h-4 w-4" />
+                  <span>Support</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline">
+                <Link href="/login">Sign In</Link>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">John Doe</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    john@example.com
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard">
-                    <BarChart className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile#settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-               <DropdownMenuItem>
-                <LifeBuoy className="mr-2 h-4 w-4" />
-                <span>Support</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Button asChild>
+                <Link href="/signup">Sign Up</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>
