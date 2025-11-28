@@ -156,7 +156,7 @@ export default function PassLockPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <header className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-headline flex items-center justify-center gap-3">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-headline flex items-center justify-center gap-3 [text-shadow:0_4px_12px_rgba(34,211,238,0.4)] bg-gradient-to-br from-primary to-cyan-400 bg-clip-text text-transparent">
           <Lock className="h-10 w-10 text-primary" />
           PassLock
         </h1>
