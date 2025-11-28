@@ -48,7 +48,6 @@ export default function PassLockPage() {
   const { toast } = useToast();
   const [isGeneratorOpen, setGeneratorOpen] = useState(false);
   const [breachStatus, setBreachStatus] = useState<'checking' | 'safe' | 'atRisk' | 'idle'>('idle');
-  const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
   
   const { strength, requirements, entropy, charDistribution } = useMemo(() => checkPasswordStrength(password), [password]);
   
@@ -58,16 +57,22 @@ export default function PassLockPage() {
   );
 
   // Client-side state for time to avoid hydration mismatch
-  const [clientLastCheckedTime, setClientLastCheckedTime] = useState<string | null>(null);
+  const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
   useEffect(() => {
-    setClientLastCheckedTime(lastCheckedTime);
+    let timer: NodeJS.Timeout | null = null;
+    if (lastCheckedTime) {
+      timer = setTimeout(() => setLastCheckedTime(new Date().toLocaleTimeString()), 1000);
+    }
+    return () => {
+      if(timer) clearTimeout(timer);
+    };
   }, [lastCheckedTime]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
         if (password.length > 3) {
             startAiTransition(async () => {
-                const analysis = await analyzePassword({ password });
+                const analysis = await analyzePassword({ password, entropy });
                 setAiAnalysis(analysis);
             });
         } else {
@@ -78,7 +83,7 @@ export default function PassLockPage() {
     return () => {
         clearTimeout(handler);
     };
-  }, [password]);
+  }, [password, entropy]);
   
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -87,8 +92,7 @@ export default function PassLockPage() {
       timer = setTimeout(() => {
         // Mock breach check
         setBreachStatus(password.includes('123') ? 'atRisk' : 'safe');
-        const now = new Date();
-        setLastCheckedTime(now.toLocaleTimeString());
+        setLastCheckedTime(new Date().toLocaleTimeString());
       }, 1500);
     } else {
       setBreachStatus('idle');
@@ -185,8 +189,9 @@ export default function PassLockPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-accent" />
-                        AI-Powered Analysis
+                        AI-Powered Recommendations
                     </CardTitle>
+                    <CardDescription>Science-backed advice to improve your password strength.</CardDescription>
                 </CardHeader>
                 <CardContent>
                 {isAiPending && (
@@ -195,37 +200,21 @@ export default function PassLockPage() {
                         <span>AI is analyzing your password...</span>
                     </div>
                 )}
-                {!isAiPending && aiAnalysis && (
-                    <div className="space-y-4 text-sm">
-                        <div>
-                            <h4 className="font-semibold mb-2">Improvement Suggestion</h4>
-                            <p className="bg-accent/20 p-2 rounded-md text-accent-foreground/90">
-                                {aiAnalysis.improvementSuggestion}
-                            </p>
+                {!isAiPending && aiAnalysis && aiAnalysis.recommendations.length > 0 && (
+                    <div className="space-y-6 text-sm">
+                      {aiAnalysis.recommendations.map(rec => (
+                        <div key={rec.priority}>
+                           <h4 className="font-bold text-base mb-2 text-primary">{rec.priority}</h4>
+                           <p className="font-semibold">{rec.suggestion}</p>
+                           <p className="text-muted-foreground mt-1 mb-2">{rec.why}</p>
+                           <p className="bg-secondary p-2 rounded-md font-mono text-xs break-all">
+                              <span className="text-muted-foreground">Example: </span>{rec.example}
+                           </p>
                         </div>
-                         {aiAnalysis.predictablePatterns.length > 0 && (
-                            <div>
-                                <h4 className="font-semibold mb-1">Predictable Patterns</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {aiAnalysis.predictablePatterns.map(p => (
-                                        <Badge key={p.segment} variant="destructive">{p.patternType}: "{p.segment}"</Badge>
-                                    ))}
-                                </div>
-                            </div>
-                         )}
-                         {aiAnalysis.commonAttackTechniques.length > 0 && (
-                            <div>
-                                <h4 className="font-semibold mb-1">Vulnerable To</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {aiAnalysis.commonAttackTechniques.map(a => (
-                                        <Badge key={a.technique} variant="outline">{a.technique}</Badge>
-                                    ))}
-                                </div>
-                            </div>
-                         )}
+                      ))}
                     </div>
                 )}
-                {!isAiPending && !aiAnalysis && password.length > 3 && (
+                {!isAiPending && (!aiAnalysis || aiAnalysis.recommendations.length === 0) && password.length > 3 && (
                     <p className="text-sm text-muted-foreground">AI analysis will appear here.</p>
                 )}
                  {!password && (
@@ -307,7 +296,7 @@ export default function PassLockPage() {
                             <p className="text-sm">We recommend changing this password immediately!</p>                             
                         </div>
                     )}
-                    {clientLastCheckedTime && <Badge variant="outline" className="mt-6">Last checked: {clientLastCheckedTime}</Badge>}
+                    {lastCheckedTime && <Badge variant="outline" className="mt-6">Last checked: {lastCheckedTime}</Badge>}
                 </CardContent>
             </Card>
         </div>

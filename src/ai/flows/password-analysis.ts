@@ -12,6 +12,7 @@ import {
   type AnalyzePasswordInput,
   type AnalyzePasswordOutput,
 } from '@/ai/schemas/password-analysis-schemas';
+import { z } from 'zod';
 
 export async function analyzePassword(
   input: AnalyzePasswordInput
@@ -21,18 +22,79 @@ export async function analyzePassword(
 
 const analyzePasswordPrompt = ai.definePrompt({
   name: 'analyzePasswordPrompt',
-  input: {schema: AnalyzePasswordInputSchema},
+  input: {schema: z.object({ password: z.string(), entropy: z.number() })},
   output: {schema: AnalyzePasswordOutputSchema},
-  prompt: `You are a cybersecurity expert specializing in password strength analysis. Analyze the provided password for weaknesses.
+  prompt: `You are an AI security expert providing password improvement recommendations 
+based on modern security science (NIST 2024, entropy analysis, and attack 
+vector research).
 
-Password: '{{{password}}}'
+CONTEXT:
+- User submitted password: '{{{password}}}'
+- Current entropy: {{entropy}} bits
 
-Your analysis should identify:
-1.  **Predictable Patterns**: Look for common words, dates (like 1990, 2024), keyboard sequences (like 'qwerty', 'asdf'), repeated character sequences (like 'aaa', '111'), or patterns that look like personal information (names, birth years).
-2.  **Vulnerabilities to Common Attacks**: Based on its structure, determine which common attack techniques (like dictionary attacks, brute force, credential stuffing) it would be most vulnerable to and briefly explain why.
-3.  **Improvement Suggestion**: Provide one single, actionable tip to make this specific password stronger. For example, "replace 'e' with '3' and add a special character at the end." or "break up the common word 'password' with numbers or symbols."
+YOUR TASK:
+Analyze the password and provide 2-3 specific, actionable recommendations 
+using the following framework.
 
-Do not provide a full new password, just a suggestion for improvement. Be concise. If the password is very strong, state that it has no obvious predictable patterns and is resilient against common attacks, and suggest a minor variation as an improvement.`,
+FRAMEWORK: SCIENCE-BACKED RECOMMENDATIONS
+
+1. LENGTH IS PRIORITY (NIST 2024 Standard)
+   - Minimum: 12 characters (NIST minimum)
+   - Recommended: 15+ characters (NIST best practice)
+   - Excellent: 20+ characters (very strong)
+   
+   Rule:
+   IF password < 15 chars:
+      Make the first priority about extending to at least 15 characters. Explain that length is the most important factor.
+   
+2. CHARACTER DIVERSITY (Not Forced Complexity)
+   - NIST 2024: Complexity is optional, NOT required
+   - Focus: Natural randomness, NOT predictable patterns
+   
+   Rule:
+   IF missing character types:
+      Recommend adding variety by mixing uppercase, lowercase, numbers, and symbols RANDOMLY. Advise against predictable positions.
+   
+3. PATTERN AVOIDANCE (Based on Attack Vectors)
+   - Keyboard sequences (qwerty, asdf, 123456)
+   - Dictionary words
+   - Repeating characters (aaa, 111)
+   - Predictable substitutions (a→@, e→3, l→1, o→0) - CRITICAL: ADVISE AGAINST THESE.
+   - Simple patterns (Capital first + lowercase + number)
+
+4. ENTROPY IMPROVEMENT (Mathematical Approach)
+   - IF entropy < 50 bits: State that entropy is low and more random characters are needed. Aim for 70+.
+   - IF entropy 50-75 bits: State it's fair, but extending to 18-20 chars would make it much stronger.
+   - IF entropy > 90 bits: Congratulate the user on excellent entropy.
+
+5. PASSPHRASE ALTERNATIVE (Modern NIST Approach)
+   - As a final recommendation or alternative, suggest a passphrase of 4+ random words, like 'CorrectHorseBatteryStaple'.
+
+CRITICAL RULES (Always follow):
+1. NEVER recommend leetspeak (a→@, e→3, s→$). These are the FIRST things attackers try.
+2. NEVER suggest patterns like "Capital first, number at end."
+3. DO emphasize LENGTH first.
+4. DO recommend RANDOMNESS and UNPREDICTABILITY.
+
+OUTPUT STRUCTURE:
+Provide recommendations as an array of objects, where each object has 'priority', 'suggestion', 'why', and 'example'.
+
+Example output format for a password like "MyPassword123!":
+[
+  {
+    "priority": "PRIORITY 1: Increase Length",
+    "suggestion": "Extend your password to at least 15-20 characters.",
+    "why": "NIST guidelines (2024) emphasize length over complexity. Each additional character exponentially increases security. Your current password could be cracked relatively quickly, but a 20-character version would take centuries.",
+    "example": "'MyPassword123!' (13 chars) → 'MyPassword123VibrSky4' (20 chars)"
+  },
+  {
+    "priority": "PRIORITY 2: Spread Characters Randomly",
+    "suggestion": "Avoid placing numbers and symbols only at the end. Mix them throughout the password randomly.",
+    "why": "Attackers use rules that expect patterns like 'Word+number+special'. Breaking this pattern makes automated attacks fail.",
+    "example": "'MyPassword123!' → 'My3P@ssw9rdVi5brSky'"
+  }
+]
+`,
 });
 
 const analyzePasswordFlow = ai.defineFlow(
@@ -44,9 +106,7 @@ const analyzePasswordFlow = ai.defineFlow(
   async input => {
     if (!input.password) {
       return {
-        predictablePatterns: [],
-        commonAttackTechniques: [],
-        improvementSuggestion: 'Enter a password to analyze its strength.',
+        recommendations: [],
       };
     }
     const {output} = await analyzePasswordPrompt(input);
