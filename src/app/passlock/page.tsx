@@ -235,7 +235,7 @@ export default function PassLockPage() {
                            <h4 className="font-bold text-base mb-1 text-primary">{rec.priority}</h4>
                            <p className="font-semibold">{rec.suggestion}</p>
                            <p className="text-muted-foreground mt-1 mb-2 text-xs">{rec.why}</p>
-                           <p className="bg-secondary p-2 rounded-md font-mono text-xs break-all">
+                           <p className="bg-muted/50 p-2 rounded-md font-mono text-xs break-all">
                               <span className="text-muted-foreground">Example: </span>{rec.example}
                            </p>
                         </div>
@@ -359,9 +359,3 @@ export default function PassLockPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
