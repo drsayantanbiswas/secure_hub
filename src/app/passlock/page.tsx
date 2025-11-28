@@ -27,7 +27,7 @@ import {
 import CharacterDistributionChart from "@/components/passlock/character-distribution-chart";
 import EntropyBar from "@/components/passlock/entropy-bar";
 import { checkPasswordStrength } from "@/lib/utils";
-import FloatingParticleConstellation from "@/components/passlock/floating-particle-constellation";
+import InteractivePixelCanvas from "@/components/interactive-pixel-canvas";
 
 const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
   <div className={`flex items-center gap-2 transition-colors ${met ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -156,7 +156,7 @@ export default function PassLockPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
-        <FloatingParticleConstellation />
+        <InteractivePixelCanvas />
         <div className="relative z-10 container mx-auto px-4 py-12">
             <header className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-headline flex items-center justify-center gap-3 [text-shadow:0_4px_12px_rgba(34,211,238,0.4)] bg-gradient-to-br from-primary to-cyan-400 bg-clip-text text-transparent">
@@ -196,7 +196,7 @@ export default function PassLockPage() {
                         </span>
                         </Button>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-cyan-700 dark:text-cyan-200 bg-cyan-500/10 dark:bg-cyan-500/10 p-3 rounded-md">
+                    <div className="flex items-center gap-2 text-sm text-cyan-700 dark:text-cyan-200 bg-cyan-500/10 p-3 rounded-md">
                         <Info className="h-5 w-5 shrink-0 text-cyan-600 dark:text-cyan-400" />
                         <span>
                         <strong>Privacy First:</strong> Password analysis and breach checks are
@@ -219,7 +219,7 @@ export default function PassLockPage() {
                 <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <Sparkles className="h-5 w-5 text-accent" />
+                                <Sparkles className="h-5 w-5 text-primary" />
                                 AI-Powered Recommendations
                             </CardTitle>
                             <CardDescription>Science-backed advice to improve your password strength.</CardDescription>
