@@ -227,7 +227,7 @@ export default function QuizPage() {
                     </CardHeader>
                     <CardContent className="text-center space-y-4">
                         <p className="text-xl font-semibold">Create a password with a strength score &gt; 85.</p>
-                        <p>Reward: <Badge>+50 XP</Badge> + <Badge variant="destructive">"Speed Secure" Badge</Badge></p>
+                        <div>Reward: <Badge>+50 XP</Badge> + <Badge variant="destructive">"Speed Secure" Badge</Badge></div>
                         <div>
                             <p className="text-sm font-medium">Status: IN PROGRESS</p>
                             <p className="text-xs text-muted-foreground">Your best so far: 82/100</p>
