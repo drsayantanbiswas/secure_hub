@@ -23,9 +23,6 @@ import { useToast } from "@/hooks/use-toast";
 import {
   AnalyzePasswordOutput,
 } from "@/ai/schemas/password-analysis-schemas";
-import {
-  analyzePassword,
-} from "@/ai/flows/password-analysis";
 import CharacterDistributionChart from "@/components/passlock/character-distribution-chart";
 import EntropyBar from "@/components/passlock/entropy-bar";
 import { checkPasswordStrength } from "@/lib/utils";
@@ -84,7 +81,14 @@ export default function PassLockPage() {
     const handler = setTimeout(() => {
         if (password.length > 3) {
             startAiTransition(async () => {
-                const analysis = await analyzePassword({ password, entropy });
+                const response = await fetch('/api/ai/analyze-password', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ password, entropy }),
+                });
+                const analysis = await response.json();
                 setAiAnalysis(analysis);
             });
         } else {

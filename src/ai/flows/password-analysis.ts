@@ -24,12 +24,13 @@ const analyzePasswordPrompt = ai.definePrompt({
   name: 'analyzePasswordPrompt',
   input: {schema: z.object({ password: z.string(), entropy: z.number() })},
   output: {schema: AnalyzePasswordOutputSchema},
-  prompt: `You are an AI security expert providing password improvement recommendations 
+  prompt: `
+You are an AI security expert providing password improvement recommendations 
 based on modern security science (NIST 2024, entropy analysis, and attack 
 vector research).
 
 CONTEXT:
-- User submitted password: '{{{password}}}'
+- User submitted password: '{{password}}'
 - Current entropy: {{entropy}} bits
 
 YOUR TASK:

@@ -1,6 +1,3 @@
-import {
-  personalizedSecurityRecommendations,
-} from "@/ai/flows/personalized-security-recommendations";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,21 +8,48 @@ import {
 } from "@/components/ui/card";
 import { Lightbulb } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { PersonalizedSecurityRecommendationsOutput } from "@/ai/schemas/personalized-security-recommendations-schemas";
 
-export default async function RecommendationsWidget() {
-  // In a real app, this data would come from the user's session or database
-  const mockUserInput = {
-    passwordStrength: 78,
-    breachStatus: "safe" as const,
-    quizProgress: 75,
-    emailMonitoringEnabled: true,
-  };
-
-  const aiResponse = await personalizedSecurityRecommendations(mockUserInput);
-  const recommendations = aiResponse?.recommendations ?? [
+export default function RecommendationsWidget() {
+  const [recommendations, setRecommendations] = useState<string[]>([
     "Enable Two-Factor Authentication on all supported accounts.",
     "Review your password manager for any weak or reused passwords.",
-  ];
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      // In a real app, this data would come from the user's session or database
+      const mockUserInput = {
+        passwordStrength: 78,
+        breachStatus: "safe" as const,
+        quizProgress: 75,
+        emailMonitoringEnabled: true,
+      };
+
+      try {
+        const response = await fetch('/api/ai/personalized-security-recommendations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(mockUserInput),
+        });
+        const aiResponse: PersonalizedSecurityRecommendationsOutput = await response.json();
+        if (aiResponse?.recommendations) {
+          setRecommendations(aiResponse.recommendations);
+        }
+      } catch (error) {
+        console.error("Failed to fetch recommendations:", error);
+        // Keep default recommendations on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
 
   const getActionForRecommendation = (rec: string) => {
     if (rec.toLowerCase().includes("password")) {
@@ -50,17 +74,21 @@ export default async function RecommendationsWidget() {
         <CardDescription>Personalized tips to boost your security score.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {recommendations.slice(0, 4).map((rec, index) => {
-          const action = getActionForRecommendation(rec);
-          return (
-            <div key={index} className="p-3 bg-secondary/50 rounded-lg">
-              <p className="text-sm font-medium leading-tight">{rec}</p>
-              <Button variant="link" size="sm" asChild className="p-0 mt-1 h-auto">
-                <Link href={action.href}>{action.label}</Link>
-              </Button>
-            </div>
-          );
-        })}
+        {loading ? (
+          <p>Loading recommendations...</p>
+        ) : (
+          recommendations.slice(0, 4).map((rec, index) => {
+            const action = getActionForRecommendation(rec);
+            return (
+              <div key={index} className="p-3 bg-secondary/50 rounded-lg">
+                <p className="text-sm font-medium leading-tight">{rec}</p>
+                <Button variant="link" size="sm" asChild className="p-0 mt-1 h-auto">
+                  <Link href={action.href}>{action.label}</Link>
+                </Button>
+              </div>
+            );
+          })
+        )}
       </CardContent>
     </Card>
   );
