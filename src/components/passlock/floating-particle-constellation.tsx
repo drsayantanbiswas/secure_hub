@@ -85,7 +85,7 @@ const FloatingParticleConstellation = () => {
     for (let i = 0; i < particleCount; i++) {
         particles.current.push(new Particle(0, 0, rect.width, rect.height));
     }
-  }, [particleCount]);
+  }, []);
 
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
@@ -182,7 +182,7 @@ const FloatingParticleConstellation = () => {
     };
   }, [initCanvas, animate]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full -z-10 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#0d0d2b]" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full -z-10 bg-gradient-to-br from-[#000000] via-[#0f172a] to-[#4c1d95]" />;
 };
 
 export default FloatingParticleConstellation;
