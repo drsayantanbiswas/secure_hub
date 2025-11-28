@@ -48,7 +48,9 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleLogin = (user: object) => {
-    localStorage.setItem('user', JSON.stringify(user));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
     router.push("/dashboard");
   };
 

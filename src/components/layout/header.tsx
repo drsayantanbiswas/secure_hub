@@ -58,10 +58,16 @@ export function AppHeader() {
 
   React.useEffect(() => {
     // Vercel build can run this code, so we need to check for `window`
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.localStorage) {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            try {
+              setUser(JSON.parse(storedUser));
+            } catch (e) {
+              console.error("Failed to parse user from localStorage", e);
+              // If parsing fails, remove the invalid item
+              localStorage.removeItem('user');
+            }
         }
     }
   }, []);
@@ -69,7 +75,7 @@ export function AppHeader() {
   const handleSignOut = async () => {
     const signedOutUser = { ...initialUser, isLoggedIn: false };
     setUser(signedOutUser);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.removeItem('user');
     }
     router.push("/");
