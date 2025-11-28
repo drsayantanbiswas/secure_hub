@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useTransition } from "react";
@@ -43,7 +44,7 @@ const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
 const breachCheckSteps = [
     "Hashing password locally (SHA-1)...",
     "Querying k-anonymity service...",
-    "Searching 12.1B+ leaked assets...",
+    "Searching public breach data...",
     "Checking hash suffix against results...",
 ];
 
@@ -301,7 +302,7 @@ export default function PassLockPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/> Breach Check</CardTitle>
-                    <CardDescription>Securely check against 12B+ leaked records using k-anonymity.</CardDescription>
+                    <CardDescription>Securely check against publicly known breaches using k-anonymity.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Button onClick={handleBreachCheck} disabled={breachStatus === 'checking' || !password} className="w-full">
@@ -312,7 +313,8 @@ export default function PassLockPage() {
                         {breachStatus === 'idle' && (
                             <>
                                 <Info className="h-12 w-12 mx-auto text-muted-foreground mb-4"/>
-                                <p className="text-muted-foreground">Click "Scan" to check if this password has appeared in any known data breaches.</p>
+                                <p className="text-muted-foreground text-sm">Click "Scan" to check if this password has appeared in any publicly known data breaches.</p>
+                                <p className="text-xs text-muted-foreground mt-2">This check is private. Your password is never sent to any server.</p>
                             </>
                         )}
                         {breachStatus === 'checking' && (
@@ -323,18 +325,23 @@ export default function PassLockPage() {
                             </div>
                         )}
                         {breachStatus === 'safe' && (
-                            <div className="text-green-600 dark:text-green-400">
-                                <CheckCircle className="h-12 w-12 mx-auto mb-4"/>
-                                <h3 className="text-xl font-bold">SAFE! NOT FOUND IN BREACHES</h3>
-                                <p className="text-sm mt-1">This password was not found in over 12 billion breach records.</p>
+                            <div className="text-green-600 dark:text-green-400 text-left space-y-3 p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                                <div className="flex items-center gap-3">
+                                  <CheckCircle className="h-10 w-10"/>
+                                  <h3 className="text-xl font-bold">SAFE - NOT FOUND IN BREACHES</h3>
+                                </div>
+                                <p className="text-sm">This password was not found in a database of hundreds of publicly known data breaches.</p>
+                                <p className="text-xs text-muted-foreground"><strong>Disclaimer:</strong> This only checks against public breaches. Always use a unique password for every account for maximum security.</p>
                             </div>
                         )}
                          {breachStatus === 'atRisk' && (
-                            <div className="text-destructive">
-                                <XCircle className="h-12 w-12 mx-auto mb-4"/>
-                                <h3 className="text-xl font-bold">WARNING! FOUND IN BREACHES</h3>
-                                <p className="text-sm mt-1">This password has been seen <span className="font-bold">{breachCount.toLocaleString()}</span> times in data breaches.</p>
-                                <p className="text-xs mt-1 font-semibold">It should be considered compromised. Change it immediately.</p>
+                            <div className="text-destructive text-left space-y-3 p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+                                <div className="flex items-center gap-3">
+                                  <XCircle className="h-10 w-10"/>
+                                  <h3 className="text-xl font-bold">WARNING! FOUND IN BREACHES</h3>
+                                </div>
+                                <p className="text-sm">This password has been seen <span className="font-bold">{breachCount.toLocaleString()}</span> times in data breaches. It should be considered compromised.</p>
+                                <p className="font-semibold text-sm">Action Required: Change this password immediately on any site you have used it on.</p>
                             </div>
                         )}
                     </div>
@@ -346,3 +353,5 @@ export default function PassLockPage() {
     </div>
   );
 }
+
+    
