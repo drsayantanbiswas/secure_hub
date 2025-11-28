@@ -88,7 +88,7 @@ const whySecureHub = [
     {
         icon: Lock,
         title: "Completely Private",
-        description: "Your data stays on your device. We use localStorage and never send sensitive info to our servers."
+        description: "Your data is yours. We perform checks locally and never send sensitive info to our servers."
     }
 ]
 

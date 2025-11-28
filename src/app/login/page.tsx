@@ -47,14 +47,25 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const handleLogin = (user: object) => {
+    localStorage.setItem('user', JSON.stringify(user));
+    router.push("/dashboard");
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    
     // Mock login
     setTimeout(() => {
       if (email === "test@example.com" && password === "password") {
-        router.push("/dashboard");
+        handleLogin({ 
+          isLoggedIn: true, 
+          displayName: 'Test User', 
+          email: 'test@example.com',
+          photoURL: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
+        });
       } else {
         setError("Invalid email or password.");
       }
@@ -67,7 +78,12 @@ export default function LoginPage() {
     setError(null);
     // Mock login
     setTimeout(() => {
-      router.push("/dashboard");
+      handleLogin({ 
+        isLoggedIn: true, 
+        displayName: 'Google User', 
+        email: 'google@example.com',
+        photoURL: "https://i.pravatar.cc/150?u=a042581f4e29026704e"
+      });
       setIsLoading(false);
     }, 1000);
   };

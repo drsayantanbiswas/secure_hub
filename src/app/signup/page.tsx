@@ -51,6 +51,11 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const handleLogin = (user: object) => {
+    localStorage.setItem('user', JSON.stringify(user));
+    router.push("/dashboard");
+  };
+
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -66,7 +71,12 @@ export default function SignupPage() {
 
     // Mock signup
     setTimeout(() => {
-      router.push("/dashboard");
+      handleLogin({ 
+        isLoggedIn: true, 
+        displayName, 
+        email,
+        photoURL: "" 
+      });
       setIsLoading(false);
     }, 1000);
   };
@@ -76,7 +86,12 @@ export default function SignupPage() {
     setError(null);
     // Mock login
     setTimeout(() => {
-      router.push("/dashboard");
+      handleLogin({ 
+        isLoggedIn: true, 
+        displayName: 'Google User', 
+        email: 'google@example.com',
+        photoURL: "https://i.pravatar.cc/150?u=a042581f4e29026704e"
+      });
       setIsLoading(false);
     }, 1000);
   };

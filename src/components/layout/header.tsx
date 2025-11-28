@@ -42,9 +42,8 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart },
 ];
 
-// Mock user data for demonstration
-const mockUser = {
-  isLoggedIn: false, // Set to true to see the logged-in state
+const initialUser = {
+  isLoggedIn: false,
   displayName: "John Doe",
   email: "john.doe@example.com",
   photoURL: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
@@ -54,11 +53,25 @@ const mockUser = {
 export function AppHeader() {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
-  const [user, setUser] = React.useState(mockUser);
+  const [user, setUser] = React.useState(initialUser);
   const router = useRouter();
 
+  React.useEffect(() => {
+    // Vercel build can run this code, so we need to check for `window`
+    if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }
+  }, []);
+
   const handleSignOut = async () => {
-    setUser({ ...user, isLoggedIn: false });
+    const signedOutUser = { ...initialUser, isLoggedIn: false };
+    setUser(signedOutUser);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+    }
     router.push("/");
   };
 
