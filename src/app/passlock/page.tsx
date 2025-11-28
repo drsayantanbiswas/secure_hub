@@ -181,7 +181,7 @@ export default function PassLockPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter a password to check..."
-                        className="pr-10 h-12 text-lg"
+                        className="pr-10 h-12 text-lg font-mono tracking-wider bg-transparent focus:shadow-glow-md transition-all duration-300"
                         />
                         <Button
                         type="button"
