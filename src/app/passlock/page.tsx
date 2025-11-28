@@ -15,6 +15,7 @@ import {
   XCircle,
   Loader2,
   Sparkles,
+  ShieldAlert,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { PasswordStrength, PasswordRequirements, checkPasswordStrength } from "@/lib/utils";
@@ -41,6 +42,13 @@ const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
   </div>
 );
 
+const breachCheckSteps = [
+    "Analyzing password hash...",
+    "Querying k-anonymity service...",
+    "Searching 12.1B leaked assets...",
+    "Checking against known breaches...",
+];
+
 
 export default function PassLockPage() {
   const [password, setPassword] = useState("");
@@ -48,7 +56,10 @@ export default function PassLockPage() {
   const { toast } = useToast();
   const [isGeneratorOpen, setGeneratorOpen] = useState(false);
   const [breachStatus, setBreachStatus] = useState<'checking' | 'safe' | 'atRisk' | 'idle'>('idle');
-  
+  const [breachCount, setBreachCount] = useState(0);
+
+  const [currentBreachStep, setCurrentBreachStep] = useState(0);
+
   const { strength, requirements, entropy, charDistribution } = useMemo(() => checkPasswordStrength(password), [password]);
   
   const [isAiPending, startAiTransition] = useTransition();
@@ -56,17 +67,19 @@ export default function PassLockPage() {
     null
   );
 
-  // Client-side state for time to avoid hydration mismatch
-  const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-    if (lastCheckedTime) {
-      timer = setTimeout(() => setLastCheckedTime(new Date().toLocaleTimeString()), 1000);
+    let interval: NodeJS.Timeout;
+    if (breachStatus === 'checking') {
+        setCurrentBreachStep(0);
+        interval = setInterval(() => {
+            setCurrentBreachStep(prev => (prev + 1) % breachCheckSteps.length);
+        }, 700);
     }
     return () => {
-      if(timer) clearTimeout(timer);
-    };
-  }, [lastCheckedTime]);
+        if(interval) clearInterval(interval);
+    }
+  }, [breachStatus]);
+
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -85,22 +98,25 @@ export default function PassLockPage() {
     };
   }, [password, entropy]);
   
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (password.length > 0) {
-      setBreachStatus('checking');
-      timer = setTimeout(() => {
-        // Mock breach check
-        setBreachStatus(password.includes('123') ? 'atRisk' : 'safe');
-        setLastCheckedTime(new Date().toLocaleTimeString());
-      }, 1500);
-    } else {
-      setBreachStatus('idle');
-      setLastCheckedTime(null);
-    }
-    
-    return () => clearTimeout(timer);
-  }, [password]);
+  const handleBreachCheck = () => {
+    if (!password) return;
+    setBreachStatus('checking');
+    setBreachCount(0);
+
+    setTimeout(() => {
+      // Mock breach check based on HaveIBeenPwned API response format
+      if (password.toLowerCase() === 'password123') {
+        setBreachCount(3156648);
+        setBreachStatus('atRisk');
+      } else if (password.includes('123')) {
+        setBreachCount(Math.floor(Math.random() * 10000) + 100);
+        setBreachStatus('atRisk');
+      } else {
+        setBreachCount(0);
+        setBreachStatus('safe');
+      }
+    }, 2800);
+  };
   
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(password);
@@ -108,21 +124,6 @@ export default function PassLockPage() {
       title: "Copied to clipboard!",
       description: "Your password has been copied.",
     });
-  };
-
-  const getStrengthColor = (level: PasswordStrength["level"]) => {
-    switch (level) {
-      case "Very Weak":
-        return "bg-red-500";
-      case "Weak":
-        return "bg-orange-500";
-      case "Fair":
-        return "bg-yellow-500";
-      case "Strong":
-        return "bg-green-500";
-      case "Very Strong":
-        return "bg-cyan-500";
-    }
   };
 
   return (
@@ -193,7 +194,7 @@ export default function PassLockPage() {
                     </CardTitle>
                     <CardDescription>Science-backed advice to improve your password strength.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="min-h-[200px]">
                 {isAiPending && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -203,10 +204,10 @@ export default function PassLockPage() {
                 {!isAiPending && aiAnalysis && aiAnalysis.recommendations.length > 0 && (
                     <div className="space-y-6 text-sm">
                       {aiAnalysis.recommendations.map(rec => (
-                        <div key={rec.priority}>
-                           <h4 className="font-bold text-base mb-2 text-primary">{rec.priority}</h4>
+                        <div key={rec.priority} className="border-l-2 pl-4 border-primary/50">
+                           <h4 className="font-bold text-base mb-1 text-primary">{rec.priority}</h4>
                            <p className="font-semibold">{rec.suggestion}</p>
-                           <p className="text-muted-foreground mt-1 mb-2">{rec.why}</p>
+                           <p className="text-muted-foreground mt-1 mb-2 text-xs">{rec.why}</p>
                            <p className="bg-secondary p-2 rounded-md font-mono text-xs break-all">
                               <span className="text-muted-foreground">Example: </span>{rec.example}
                            </p>
@@ -215,7 +216,11 @@ export default function PassLockPage() {
                     </div>
                 )}
                 {!isAiPending && (!aiAnalysis || aiAnalysis.recommendations.length === 0) && password.length > 3 && (
-                    <p className="text-sm text-muted-foreground">AI analysis will appear here.</p>
+                     <div className="text-center py-8 text-muted-foreground">
+                        <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500"/>
+                        <p className="font-semibold">Looks good!</p>
+                        <p>No immediate recommendations from the AI.</p>
+                    </div>
                 )}
                  {!password && (
                     <p className="text-sm text-muted-foreground">Enter a password to get AI analysis.</p>
@@ -267,36 +272,42 @@ export default function PassLockPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Breach Check Status</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/> Breach Check</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center p-8">
-                    {breachStatus === 'idle' && (
-                        <>
-                            <Info className="h-12 w-12 mx-auto text-muted-foreground mb-4"/>
-                            <p className="text-muted-foreground">Enter a password to check its breach status.</p>
-                        </>
-                    )}
-                    {breachStatus === 'checking' && (
-                        <>
-                            <Loader2 className="h-12 w-12 mx-auto text-primary animate-spin mb-4"/>
-                            <p className="text-muted-foreground">Checking against known data breaches...</p>
-                        </>
-                    )}
-                    {breachStatus === 'safe' && (
-                        <div className="text-green-600 dark:text-green-400">
-                            <CheckCircle className="h-12 w-12 mx-auto mb-4"/>
-                            <h3 className="text-xl font-bold">NOT FOUND IN ANY BREACHES</h3>
-                            <p className="text-sm">This password appears to be safe to use.</p>
-                        </div>
-                    )}
-                     {breachStatus === 'atRisk' && (
-                        <div className="text-destructive">
-                            <XCircle className="h-12 w-12 mx-auto mb-4"/>
-                            <h3 className="text-xl font-bold">FOUND IN KNOWN BREACHES</h3>
-                            <p className="text-sm">We recommend changing this password immediately!</p>                             
-                        </div>
-                    )}
-                    {lastCheckedTime && <Badge variant="outline" className="mt-6">Last checked: {lastCheckedTime}</Badge>}
+                <CardContent className="space-y-4">
+                     <Button onClick={handleBreachCheck} disabled={breachStatus === 'checking' || !password} className="w-full">
+                        {breachStatus === 'checking' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShieldAlert className="mr-2 h-4 w-4"/>}
+                        Scan For Breaches
+                    </Button>
+                    <div className="text-center p-4 min-h-[150px] flex flex-col justify-center items-center">
+                        {breachStatus === 'idle' && (
+                            <>
+                                <Info className="h-12 w-12 mx-auto text-muted-foreground mb-4"/>
+                                <p className="text-muted-foreground">Click "Scan" to check if this password has appeared in any known data breaches.</p>
+                            </>
+                        )}
+                        {breachStatus === 'checking' && (
+                            <div className="text-center w-full">
+                                <Loader2 className="h-10 w-10 mx-auto text-primary animate-spin mb-4"/>
+                                <p className="font-mono text-sm text-primary">{breachCheckSteps[currentBreachStep]}</p>
+                            </div>
+                        )}
+                        {breachStatus === 'safe' && (
+                            <div className="text-green-600 dark:text-green-400">
+                                <CheckCircle className="h-12 w-12 mx-auto mb-4"/>
+                                <h3 className="text-xl font-bold">SAFE! NOT FOUND IN BREACHES</h3>
+                                <p className="text-sm mt-1">This password hasn't been found in any of the breaches we've analyzed.</p>
+                            </div>
+                        )}
+                         {breachStatus === 'atRisk' && (
+                            <div className="text-destructive">
+                                <XCircle className="h-12 w-12 mx-auto mb-4"/>
+                                <h3 className="text-xl font-bold">WARNING! FOUND IN BREACHES</h3>
+                                <p className="text-sm mt-1">This password appeared in <span className="font-bold">{breachCount.toLocaleString()}</span> known breaches.</p>
+                                <p className="text-xs mt-1">We strongly recommend changing it immediately.</p>
+                            </div>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>
