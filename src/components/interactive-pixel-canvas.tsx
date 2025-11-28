@@ -89,8 +89,9 @@ const InteractivePixelCanvas = () => {
             this.y = getRandom(-height, height);
         }
 
-        const dx = this.x * (width / (width + this.z)) - (mouse.current.x - width / 2);
-        const dy = this.y * (height / (height + this.z)) - (mouse.current.y - height / 2);
+        const { x: projectedX, y: projectedY } = this.getProjected();
+        const dx = projectedX - mouse.current.x;
+        const dy = projectedY - mouse.current.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         // Mouse attraction / repulsion
@@ -104,8 +105,8 @@ const InteractivePixelCanvas = () => {
               this.vx -= forceDirectionX * force * 2;
               this.vy -= forceDirectionY * force * 2;
             } else { // Otherwise, attract
-              this.vx += forceDirectionX * force * 0.1;
-              this.vy += forceDirectionY * force * 0.1;
+              this.vx -= forceDirectionX * force * 0.2;
+              this.vy -= forceDirectionY * force * 0.2;
             }
         }
 
@@ -256,3 +257,6 @@ const InteractivePixelCanvas = () => {
 
 export default InteractivePixelCanvas;
 
+
+
+    
