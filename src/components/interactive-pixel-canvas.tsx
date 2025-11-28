@@ -1,5 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useCallback } from 'react';
+import { useTheme } from 'next-themes';
 
 const InteractivePixelCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -7,17 +8,23 @@ const InteractivePixelCanvas = () => {
   const mouse = useRef({ x: -1000, y: -1000 });
   const particles = useRef<any[]>([]);
   let lastMouseTime = useRef(Date.now());
+  const { theme } = useTheme();
+
 
   // --- Configuration ---
   const particleCount = 75; // Number of particles in the stream
   const particleLife = 60; // Frames a particle lives
   const particleSpeed = 2;
-  const particleColors = ['#22d3ee', '#6366f1', '#a5f3fc', '#ede9fe']; // Teal, Indigo, Light Cyan
+  const particleColorsDark = ['#22d3ee', '#6366f1', '#a5f3fc', '#ede9fe'];
+  const particleColorsLight = ['#0ea5e9', '#4f46e5', '#67e8f9', '#a78bfa'];
   const idleTimeout = 2000; // 2 seconds
 
   // --- Utility Functions ---
   const getRandom = (min: number, max: number) => Math.random() * (max - min) + min;
-  const getRandomColor = () => particleColors[Math.floor(Math.random() * particleColors.length)];
+  const getRandomColor = useCallback(() => {
+    const colors = theme === 'dark' ? particleColorsDark : particleColorsLight;
+    return colors[Math.floor(Math.random() * colors.length)];
+  }, [theme]);
 
   // --- Particle Class ---
   class Particle {
@@ -31,7 +38,7 @@ const InteractivePixelCanvas = () => {
     radius: number;
     char: string | null;
 
-    constructor(x: number, y: number) {
+    constructor(x: number, y: number, colorFunc: () => string) {
       this.x = x;
       this.y = y;
       const angle = Math.random() * Math.PI * 2;
@@ -39,7 +46,7 @@ const InteractivePixelCanvas = () => {
       this.vy = Math.sin(angle) * particleSpeed + getRandom(-0.5, 0.5);
       this.maxLife = particleLife;
       this.life = this.maxLife;
-      this.color = getRandomColor();
+      this.color = colorFunc();
       this.radius = getRandom(1, 2.5);
       this.char = Math.random() > 0.95 ? ['🛡', '🔒', '✓'][Math.floor(Math.random() * 3)] : null;
     }
@@ -63,7 +70,6 @@ const InteractivePixelCanvas = () => {
       this.x += this.vx;
       this.y += this.vy;
       
-      // Add slight magnetic curve
       this.vx += (mouse.current.x - this.x) * 0.0001;
       this.vy += (mouse.current.y - this.y) * 0.0002;
       
@@ -97,9 +103,8 @@ const InteractivePixelCanvas = () => {
     const dpr = window.devicePixelRatio || 1;
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
     
-    // Draw subtle dot grid
     const spacing = 30;
-    ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
+    ctx.fillStyle = theme === 'dark' ? 'rgba(128, 128, 128, 0.1)' : 'rgba(128, 128, 128, 0.15)';
     for (let x = 0; x < canvas.width / dpr; x += spacing) {
         for (let y = 0; y < canvas.height / dpr; y += spacing) {
             ctx.beginPath();
@@ -110,17 +115,15 @@ const InteractivePixelCanvas = () => {
 
 
     if(Date.now() - lastMouseTime.current < idleTimeout) {
-      // Add new particles if moving
       for(let i=0; i<3; i++) {
-          particles.current.push(new Particle(mouse.current.x, mouse.current.y));
+          particles.current.push(new Particle(mouse.current.x, mouse.current.y, getRandomColor));
       }
     } else {
-        // Idle animation: form a shield
         const shieldCenterX = mouse.current.x;
         const shieldCenterY = mouse.current.y;
         const shieldRadius = 40;
         
-        ctx.strokeStyle = 'rgba(34, 211, 238, 0.2)';
+        ctx.strokeStyle = theme === 'dark' ? 'rgba(34, 211, 238, 0.2)' : 'rgba(34, 211, 238, 0.4)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(shieldCenterX, shieldCenterY - shieldRadius);
@@ -140,7 +143,7 @@ const InteractivePixelCanvas = () => {
     });
 
     animationFrameId.current = requestAnimationFrame(animate);
-  }, []);
+  }, [theme, getRandomColor]);
 
   useEffect(() => {
     initCanvas();
@@ -184,7 +187,7 @@ const InteractivePixelCanvas = () => {
     };
   }, [initCanvas, animate]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full -z-10 bg-background" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full -z-10 bg-background dark:bg-transparent" />;
 };
 
 export default InteractivePixelCanvas;
