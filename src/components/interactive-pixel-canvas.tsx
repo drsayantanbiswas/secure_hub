@@ -8,12 +8,10 @@ const InteractivePixelCanvas = () => {
   const animationFrameId = useRef<number>();
   const mouse = useRef({ x: 0, y: 0 });
   const particles = useRef<any[]>([]);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
   // --- Configuration ---
   const particleCount = 1000;
-  const particleColor = 'rgba(255, 255, 255, 0.8)';
-  const connectionDistance = 100;
   const mouseInfluence = 150;
   const particleBaseSpeed = 0.5;
 
@@ -56,7 +54,7 @@ const InteractivePixelCanvas = () => {
       const y = this.y * scale + height / 2;
       const r = this.radius * scale;
       
-      const particleColor = theme === 'light' ? `rgba(15, 23, 42, ${scale * 0.6})` : `rgba(34, 211, 238, ${scale * 0.8})`;
+      const particleColor = resolvedTheme === 'light' ? `rgba(15, 23, 42, ${scale * 0.6})` : `rgba(173, 216, 230, ${scale * 0.8})`; // Light blue for dark theme
       ctx.fillStyle = particleColor;
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
@@ -122,11 +120,11 @@ const InteractivePixelCanvas = () => {
 
     // Create gradient
     let gradient;
-    if (theme === 'dark') {
+    if (resolvedTheme === 'dark') {
       gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#000000');
-      gradient.addColorStop(0.5, '#0f172a');
-      gradient.addColorStop(1, '#4c1d95');
+      gradient.addColorStop(0, '#000000');  // Black
+      gradient.addColorStop(0.5, '#000080'); // Navy
+      gradient.addColorStop(1, '#4b0082');   // Indigo/Purple
     } else {
       gradient = ctx.createLinearGradient(0, 0, 0, height);
       gradient.addColorStop(0, '#ffffff');
@@ -145,7 +143,7 @@ const InteractivePixelCanvas = () => {
     ctx.restore();
 
     animationFrameId.current = requestAnimationFrame(animate);
-  }, [theme]);
+  }, [resolvedTheme]);
 
   useEffect(() => {
     initCanvas();
