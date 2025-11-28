@@ -37,7 +37,7 @@ const featureCards = [
     ],
     cta: "Start Quiz",
     href: "/quiz",
-    color: "border-accent",
+    color: "border-secondary",
   },
   {
     icon: MailWarning,
@@ -95,7 +95,7 @@ const whySecureHub = [
 export default function Home() {
   return (
     <div className="flex flex-col items-center">
-      <section className="w-full bg-gradient-to-br from-primary/10 via-background to-accent/10 py-20 md:py-32">
+      <section className="w-full bg-gradient-to-br from-background via-card to-background py-20 md:py-32">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center items-center gap-4 mb-4">
             <Lock className="h-12 w-12 text-primary" />
@@ -106,8 +106,8 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-muted-foreground mb-4">
             Your Complete Security Partner
           </p>
-          <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8">
-            "One Platform for All Your Security Needs"
+          <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-balance">
+            One Platform for All Your Security Needs: Password Strength Checker, Gamified Security Learning, Email Breach Monitoring, and a Personalized Security Dashboard.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left mb-12">
             <div className="flex items-center gap-2">
@@ -144,7 +144,7 @@ export default function Home() {
             {featureCards.map((card) => (
               <Card
                 key={card.title}
-                className={`transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl border-2 ${card.color} flex flex-col`}
+                className={`transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/20 flex flex-col ${card.color}`}
               >
                 <div className="p-8 flex-grow">
                   <div className="flex items-center gap-4 mb-4">
@@ -174,7 +174,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="w-full py-16 md:py-24 bg-secondary/50">
+      <section className="w-full py-16 md:py-24 bg-card/50">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12 font-headline">
             Why Choose SecureHub?
@@ -197,16 +197,16 @@ export default function Home() {
 
       <section className="w-full py-16 md:py-24">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4 font-headline">Ready to Secure Your Digital Life?</h2>
+          <h2 className="text-4xl font-bold mb-4 font-headline text-balance">Ready to Secure Your Digital Life?</h2>
           <p className="text-lg text-muted-foreground mb-8">
             Create an account or log in to get started with our full suite of security tools.
           </p>
           <Button size="lg" asChild>
-            <Link href="/profile">Start Now - Sign Up</Link>
+            <Link href="/signup">Start Now - Sign Up</Link>
           </Button>
           <p className="mt-4 text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/profile" className="underline hover:text-primary">
+            <Link href="/login" className="underline hover:text-primary">
               Log In
             </Link>
           </p>

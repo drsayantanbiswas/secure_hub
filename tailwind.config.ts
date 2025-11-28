@@ -66,9 +66,9 @@ export default {
         },
       },
       borderRadius: {
-        lg: "12px",
-        md: "8px",
-        sm: "6px",
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
         'xs': '0 1px 2px rgba(0, 0, 0, 0.3)',
