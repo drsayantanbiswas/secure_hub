@@ -15,16 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-} from "firebase/auth";
-import { useAuth } from "@/firebase";
 import { cn } from "@/lib/utils";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { useFirestore } from "@/firebase/provider";
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -58,8 +49,6 @@ export default function SignupPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -75,83 +64,21 @@ export default function SignupPage() {
     setIsLoading(true);
     setError(null);
 
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName });
-
-      const userDocRef = doc(firestore, "users", userCredential.user.uid);
-      await setDoc(userDocRef, {
-        userId: userCredential.user.uid,
-        displayName,
-        email: userCredential.user.email,
-        photoURL: userCredential.user.photoURL,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        profile: {
-          level: 1,
-          totalXP: 0,
-          totalBadges: 0,
-          passwordsChecked: 0,
-          emailsChecked: 0,
-          quizzesCompleted: 0,
-          securityScore: 0,
-        },
-      });
-
+    // Mock signup
+    setTimeout(() => {
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(getFirebaseErrorMessage(err));
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
-
-      const userDocRef = doc(firestore, "users", user.uid);
-      await setDoc(userDocRef, {
-        userId: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        profile: {
-          level: 1,
-          totalXP: 0,
-          totalBadges: 0,
-          passwordsChecked: 0,
-          emailsChecked: 0,
-          quizzesCompleted: 0,
-          securityScore: 0,
-        },
-      }, { merge: true });
-
+    // Mock login
+    setTimeout(() => {
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(getFirebaseErrorMessage(err));
-    } finally {
       setIsLoading(false);
-    }
-  };
-
-  const getFirebaseErrorMessage = (error: any): string => {
-    switch (error.code) {
-      case "auth/email-already-in-use":
-        return "This email address is already taken.";
-      case "auth/invalid-email":
-        return "Invalid email address format.";
-      case "auth/weak-password":
-        return "Password is too weak. It must be at least 6 characters long.";
-      default:
-        return "An unknown error occurred. Please try again.";
-    }
+    }, 1000);
   };
 
   return (

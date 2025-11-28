@@ -32,8 +32,6 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../theme-toggle";
-import { useUser, useAuth } from "@/firebase/provider";
-import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
 const navLinks = [
@@ -44,18 +42,24 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart },
 ];
 
+// Mock user data for demonstration
+const mockUser = {
+  isLoggedIn: false, // Set to true to see the logged-in state
+  displayName: "John Doe",
+  email: "john.doe@example.com",
+  photoURL: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
+};
+
+
 export function AppHeader() {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
+  const [user, setUser] = React.useState(mockUser);
   const router = useRouter();
 
   const handleSignOut = async () => {
-    if (auth) {
-      await signOut(auth);
-      router.push("/");
-    }
+    setUser({ ...user, isLoggedIn: false });
+    router.push("/");
   };
 
   const getInitials = (name?: string | null) => {
@@ -140,16 +144,14 @@ export function AppHeader() {
 
         <div className="flex flex-1 items-center justify-end space-x-2">
           <ThemeToggle />
-          {!isUserLoading && user && (
+          {user.isLoggedIn && (
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
               <span className="sr-only">Notifications</span>
             </Button>
           )}
 
-          {isUserLoading ? (
-            <div className="h-8 w-8 rounded-full bg-secondary" />
-          ) : user ? (
+          {user.isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

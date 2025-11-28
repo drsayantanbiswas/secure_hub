@@ -14,12 +14,6 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
-import { useAuth } from "@/firebase";
 import { cn } from "@/lib/utils";
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -51,50 +45,31 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const auth = useAuth();
   const router = useRouter();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(getFirebaseErrorMessage(err));
-    } finally {
+    // Mock login
+    setTimeout(() => {
+      if (email === "test@example.com" && password === "password") {
+        router.push("/dashboard");
+      } else {
+        setError("Invalid email or password.");
+      }
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+    // Mock login
+    setTimeout(() => {
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(getFirebaseErrorMessage(err));
-    } finally {
       setIsLoading(false);
-    }
-  };
-
-  const getFirebaseErrorMessage = (error: any): string => {
-    switch (error.code) {
-      case "auth/invalid-email":
-        return "Invalid email address format.";
-      case "auth/user-not-found":
-      case "auth/wrong-password":
-      case "auth/invalid-credential":
-        return "Invalid email or password.";
-      case "auth/too-many-requests":
-        return "Too many attempts. Please try again later.";
-      default:
-        return "An unknown error occurred. Please try again.";
-    }
+    }, 1000);
   };
 
   return (
