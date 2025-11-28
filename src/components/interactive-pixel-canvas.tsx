@@ -17,8 +17,10 @@ const InteractivePixelCanvas = () => {
   const connectionDistance = 100; // Max distance for lines between particles
 
   useEffect(() => {
-    // Initialize mouse position only on the client
-    mouse.current = { x: window.innerWidth / 2, y: window.innerHeight / 2, clicked: false };
+    // Initialize mouse position only on the client side
+    if (typeof window !== 'undefined') {
+        mouse.current = { x: window.innerWidth / 2, y: window.innerHeight / 2, clicked: false };
+    }
   }, []);
 
   // --- Utility Functions ---
@@ -52,15 +54,15 @@ const InteractivePixelCanvas = () => {
     getProjected() {
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0, scale: 0, r: 0 };
-      const { width, height } = canvas.getBoundingClientRect();
+      const { width } = canvas.getBoundingClientRect();
       const scale = width / (width + this.z);
-      const x = this.x * scale + width / 2;
-      const y = this.y * scale + height / 2;
+      const x = this.x * scale + canvas.width / 2 / (window.devicePixelRatio || 1);
+      const y = this.y * scale + canvas.height / 2 / (window.devicePixelRatio || 1);
       const r = this.radius * scale;
       return { x, y, scale, r };
     }
 
-    draw(ctx: CanvasRenderingContext2D, width: number, height: number, dx: number, dy: number, dist: number) {
+    draw(ctx: CanvasRenderingContext2D, dx: number, dy: number, dist: number) {
       const { x, y, r, scale } = this.getProjected();
       
       let opacity = scale * 0.8;
@@ -90,8 +92,13 @@ const InteractivePixelCanvas = () => {
         }
 
         const { x: projectedX, y: projectedY } = this.getProjected();
-        const dx = projectedX - mouse.current.x;
-        const dy = projectedY - mouse.current.y;
+        
+        const dpr = window.devicePixelRatio || 1;
+        const mouseX = mouse.current.x / dpr;
+        const mouseY = mouse.current.y / dpr;
+
+        const dx = projectedX - mouseX;
+        const dy = projectedY - mouseY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         // Mouse attraction / repulsion
@@ -102,8 +109,8 @@ const InteractivePixelCanvas = () => {
             
             // If clicked, push away (explosion)
             if (mouse.current.clicked) {
-              this.vx -= forceDirectionX * force * 2;
-              this.vy -= forceDirectionY * force * 2;
+              this.vx -= forceDirectionX * force * 15; // Increased explosion force
+              this.vy -= forceDirectionY * force * 15;
             } else { // Otherwise, attract
               this.vx -= forceDirectionX * force * 0.2;
               this.vy -= forceDirectionY * force * 0.2;
@@ -132,7 +139,8 @@ const InteractivePixelCanvas = () => {
     ctx.scale(dpr, dpr);
     
     particles.current = [];
-    for (let i = 0; i < particleCount; i++) {
+    const numParticles = Math.min(particleCount, 800); // Limit particles for performance
+    for (let i = 0; i < numParticles; i++) {
         particles.current.push(new Particle(rect.width, rect.height));
     }
   }, []);
@@ -156,7 +164,7 @@ const InteractivePixelCanvas = () => {
       gradient.addColorStop(1, '#1e293b'); // slate-800
     } else {
       gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#f8fafc'); // slate-50
+      gradient.addColorStop(0, '#f1f5f9'); // slate-100
       gradient.addColorStop(1, '#e2e8f0'); // slate-200
     }
 
@@ -190,10 +198,13 @@ const InteractivePixelCanvas = () => {
     particles.current.forEach(p => {
         p.update(width, height);
         const {x, y} = p.getProjected();
-        const dx = x - mouse.current.x;
-        const dy = y - mouse.current.y;
+        const dpr = window.devicePixelRatio || 1;
+        const mouseX = mouse.current.x / dpr;
+        const mouseY = mouse.current.y / dpr;
+        const dx = x - mouseX;
+        const dy = y - mouseY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        p.draw(ctx, width, height, dx, dy, dist);
+        p.draw(ctx, dx, dy, dist);
     });
 
     ctx.restore();
@@ -218,17 +229,19 @@ const InteractivePixelCanvas = () => {
       const canvas = canvasRef.current;
       if(!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      mouse.current.x = e.clientX - rect.left;
-      mouse.current.y = e.clientY - rect.top;
+      const dpr = window.devicePixelRatio || 1;
+      mouse.current.x = (e.clientX - rect.left) * dpr;
+      mouse.current.y = (e.clientY - rect.top) * dpr;
     };
     
     const handleTouchMove = (e: TouchEvent) => {
         const canvas = canvasRef.current;
         if(!canvas) return;
         const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
         if(e.touches.length > 0) {
-            mouse.current.x = e.touches[0].clientX - rect.left;
-            mouse.current.y = e.touches[0].clientY - rect.top;
+            mouse.current.x = (e.touches[0].clientX - rect.left) * dpr;
+            mouse.current.y = (e.touches[0].clientY - rect.top) * dpr;
         }
     };
     
@@ -256,7 +269,3 @@ const InteractivePixelCanvas = () => {
 };
 
 export default InteractivePixelCanvas;
-
-
-
-    

@@ -15,7 +15,6 @@ import Link from "next/link";
 import InteractivePixelCanvas from "@/components/interactive-pixel-canvas";
 import { SecureHubLogo } from "@/components/icons";
 import React, { createContext, useContext, useState, useRef, useEffect, ReactNode } from "react";
-import { useMouseTrail } from "@/hooks/use-mouse-trail";
 
 // --- Mouse-tracking context for interactive elements ---
 interface MouseContextType {
@@ -35,19 +34,16 @@ const useMousePosition = () => {
 
 const InteractiveMouseProvider = ({ children }: { children: ReactNode }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  useMouseTrail(30);
-
+  
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setPosition({ x: e.clientX, y: e.clientY });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    document.body.classList.add('trail-active');
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      document.body.classList.remove('trail-active');
     };
   }, []);
   
