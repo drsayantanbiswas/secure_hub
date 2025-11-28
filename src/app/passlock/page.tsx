@@ -23,6 +23,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
   AnalyzePasswordOutput,
+} from "@/ai/schemas/password-analysis-schemas";
+import {
   analyzePassword,
 } from "@/ai/flows/password-analysis";
 import CharacterDistributionChart from "@/components/passlock/character-distribution-chart";
@@ -78,7 +80,8 @@ export default function PassLockPage() {
       timer = setTimeout(() => {
         // Mock breach check
         setBreachStatus(password.includes('123') ? 'atRisk' : 'safe');
-        setLastCheckedTime(new Date().toLocaleTimeString());
+        const now = new Date();
+        setLastCheckedTime(now.toLocaleTimeString());
       }, 1500);
     } else {
       setBreachStatus('idle');
