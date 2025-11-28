@@ -105,48 +105,46 @@ export default function Home() {
       <section className="w-full relative h-screen">
         <InteractivePixelCanvas />
         <div className="container mx-auto px-4 text-center absolute inset-0 flex flex-col items-center justify-center">
-            <Card className="max-w-4xl bg-card/60 backdrop-blur-lg border-primary/30 shadow-glow-md">
-              <CardContent className="p-8 md:p-12">
-                <div className="flex justify-center items-center gap-4 mb-4">
-                  <SecureHubLogo className="h-12 w-12 text-primary" />
-                  <h1 className="text-5xl md:text-7xl font-bold tracking-tight font-headline bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
-                    SecureHub
-                  </h1>
-                </div>
-                <p className="text-xl md:text-2xl text-muted-foreground mb-4">
-                  Your Complete Security Partner
-                </p>
-                <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-balance">
-                  One Platform for All Your Security Needs: Password Strength Checker, Gamified Security Learning, Email Breach Monitoring, and a Personalized Security Dashboard.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left mb-12">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span>Password Strength</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span>Gamified Learning</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span>Email Breach Monitoring</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span>Security Dashboard</span>
-                  </div>
-                </div>
-                <div className="flex justify-center gap-4">
-                    <Button asChild size="lg">
-                      <Link href="/passlock">🚀 Get Started</Link>
-                    </Button>
-                    <Button asChild size="lg" variant="outline">
-                      <Link href="#features">📚 Learn More</Link>
-                    </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="max-w-4xl p-8 md:p-12">
+            <div className="flex justify-center items-center gap-4 mb-4">
+              <SecureHubLogo className="h-12 w-12 text-primary" />
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight font-headline bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent [text-shadow:0_2px_8px_rgba(255,255,255,0.2)]">
+                SecureHub
+              </h1>
+            </div>
+            <p className="text-xl md:text-2xl text-muted-foreground mb-4 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
+              Your Complete Security Partner
+            </p>
+            <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-balance [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
+              One Platform for All Your Security Needs: Password Strength Checker, Gamified Security Learning, Email Breach Monitoring, and a Personalized Security Dashboard.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left mb-12">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <span>Password Strength</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <span>Gamified Learning</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <span>Email Breach Monitoring</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <span>Security Dashboard</span>
+              </div>
+            </div>
+            <div className="flex justify-center gap-4">
+                <Button asChild size="lg">
+                  <Link href="/passlock">🚀 Get Started</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="#features">📚 Learn More</Link>
+                </Button>
+            </div>
+          </div>
         </div>
       </section>
 
