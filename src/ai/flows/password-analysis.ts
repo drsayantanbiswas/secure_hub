@@ -12,7 +12,6 @@ import {
   type AnalyzePasswordInput,
   type AnalyzePasswordOutput,
 } from '@/ai/schemas/password-analysis-schemas';
-import { z } from 'zod';
 
 export async function analyzePassword(
   input: AnalyzePasswordInput
@@ -22,7 +21,7 @@ export async function analyzePassword(
 
 const analyzePasswordPrompt = ai.definePrompt({
   name: 'analyzePasswordPrompt',
-  input: {schema: z.object({ password: z.string(), entropy: z.number() })},
+  input: {schema: AnalyzePasswordInputSchema},
   output: {schema: AnalyzePasswordOutputSchema},
   prompt: `
 You are an AI security expert providing password improvement recommendations 
@@ -114,3 +113,5 @@ const analyzePasswordFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

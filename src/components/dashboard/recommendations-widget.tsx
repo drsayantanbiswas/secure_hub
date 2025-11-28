@@ -1,3 +1,6 @@
+
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +12,7 @@ import {
 import { Lightbulb } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PersonalizedSecurityRecommendationsOutput } from "@/ai/schemas/personalized-security-recommendations-schemas";
+import { personalizedSecurityRecommendations, PersonalizedSecurityRecommendationsOutput } from "@/ai/flows/personalized-security-recommendations";
 
 export default function RecommendationsWidget() {
   const [recommendations, setRecommendations] = useState<string[]>([
@@ -29,14 +32,7 @@ export default function RecommendationsWidget() {
       };
 
       try {
-        const response = await fetch('/api/ai/personalized-security-recommendations', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(mockUserInput),
-        });
-        const aiResponse: PersonalizedSecurityRecommendationsOutput = await response.json();
+        const aiResponse = await personalizedSecurityRecommendations(mockUserInput);
         if (aiResponse?.recommendations) {
           setRecommendations(aiResponse.recommendations);
         }
@@ -93,3 +89,5 @@ export default function RecommendationsWidget() {
     </Card>
   );
 }
+
+    

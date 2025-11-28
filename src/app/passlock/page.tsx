@@ -21,8 +21,9 @@ import {
 import { PasswordGeneratorModal } from "@/components/passlock/password-generator-modal";
 import { useToast } from "@/hooks/use-toast";
 import {
+  analyzePassword,
   AnalyzePasswordOutput,
-} from "@/ai/schemas/password-analysis-schemas";
+} from "@/ai/flows/password-analysis";
 import CharacterDistributionChart from "@/components/passlock/character-distribution-chart";
 import EntropyBar from "@/components/passlock/entropy-bar";
 import { checkPasswordStrength } from "@/lib/utils";
@@ -81,14 +82,7 @@ export default function PassLockPage() {
     const handler = setTimeout(() => {
         if (password.length > 3) {
             startAiTransition(async () => {
-                const response = await fetch('/api/ai/analyze-password', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ password, entropy }),
-                });
-                const analysis = await response.json();
+                const analysis = await analyzePassword({ password, entropy });
                 setAiAnalysis(analysis);
             });
         } else {
@@ -334,8 +328,16 @@ export default function PassLockPage() {
                                   <CheckCircle className="h-10 w-10"/>
                                   <h3 className="text-xl font-bold">SAFE - NOT FOUND IN BREACHES</h3>
                                 </div>
-                                <p className="text-sm">This password was not found in a database of hundreds of publicly known data breaches.</p>
-                                <p className="text-xs text-muted-foreground"><strong>Disclaimer:</strong> This only checks against public breaches. Always use a unique password for every account for maximum security.</p>
+                                <div className="text-sm space-y-2">
+                                  <p>This password was not found in a database of hundreds of publicly known data breaches.</p>
+                                  <p className="font-semibold">How it works:</p>
+                                  <ul className="list-disc pl-5 text-xs text-muted-foreground">
+                                    <li>Your password was hashed locally (SHA-1).</li>
+                                    <li>Only the first 5 characters of the hash were sent to an API.</li>
+                                    <li>The API returned a list of all hashes with that prefix, and we checked for a match locally.</li>
+                                    <li>This method, called k-anonymity, ensures your password is never exposed.</li>
+                                  </ul>
+                                </div>
                             </div>
                         )}
                          {breachStatus === 'atRisk' && (
@@ -357,5 +359,7 @@ export default function PassLockPage() {
     </div>
   );
 }
+
+    
 
     
