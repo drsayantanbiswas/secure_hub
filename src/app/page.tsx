@@ -243,34 +243,33 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {featureCards.map((card) => (
-                <Magnetic key={card.title}>
-                  <Card
-                    className={`transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/20 flex flex-col ${card.color} h-full`}
-                  >
-                    <div className="p-8 flex-grow">
-                      <div className="flex items-center gap-4 mb-4">
-                        <card.icon className={`h-10 w-10 ${card.color.replace('border-', 'text-')}`} />
-                        <div>
-                          <h3 className="text-2xl font-bold font-headline">{card.title}</h3>
-                          <p className="text-muted-foreground">{card.subtitle}</p>
-                        </div>
+                <Card
+                  key={card.title}
+                  className={`transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/20 flex flex-col ${card.color} h-full`}
+                >
+                  <div className="p-8 flex-grow">
+                    <div className="flex items-center gap-4 mb-4">
+                      <card.icon className={`h-10 w-10 ${card.color.replace('border-', 'text-')}`} />
+                      <div>
+                        <h3 className="text-2xl font-bold font-headline">{card.title}</h3>
+                        <p className="text-muted-foreground">{card.subtitle}</p>
                       </div>
-                      <ul className="space-y-2 text-muted-foreground">
-                        {card.features.map((feature) => (
-                          <li key={feature} className="flex items-start gap-2">
-                            <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
                     </div>
-                    <div className="p-6 pt-0 mt-auto">
-                        <Button asChild className="w-full" variant="outline">
-                            <Link href={card.href}>{card.cta}</Link>
-                        </Button>
-                    </div>
-                  </Card>
-                </Magnetic>
+                    <ul className="space-y-2 text-muted-foreground">
+                      {card.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-6 pt-0 mt-auto">
+                      <Button asChild className="w-full" variant="outline">
+                          <Link href={card.href}>{card.cta}</Link>
+                      </Button>
+                  </div>
+                </Card>
               ))}
             </div>
           </div>
