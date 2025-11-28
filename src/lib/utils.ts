@@ -19,14 +19,11 @@ export type PasswordRequirements = {
   specialChars: boolean;
 };
 
-type CharDistribution = {
+export type CharDistribution = {
     name: string;
-    lowercase: number;
-    uppercase: number;
-    numbers: number;
-    special: number;
+    value: number;
+    fill: string;
 }[];
-
 
 export const checkPasswordStrength = (password: string): { 
   strength: PasswordStrength, 
@@ -43,41 +40,36 @@ export const checkPasswordStrength = (password: string): {
     specialChars: /[^A-Za-z0-9]/.test(password),
   };
 
-  if (requirements.length) score += 25;
-  if (requirements.uppercase) score += 20;
-  if (requirements.lowercase) score += 10; // Lowercase is common, less points
-  if (requirements.numbers) score += 20;
-  if (requirements.specialChars) score += 25;
+  const { entropy } = calculateEntropy(password);
+  score = (Math.min(entropy, 128) / 128) * 100;
 
-  // Bonus for length
-  if (password.length > 12) score += 10;
-  if (password.length > 16) score += 10;
+  // Adjust score based on requirements for a more intuitive feel, but cap at 100
+  if (requirements.length) score = Math.min(100, score + 5);
+  if (requirements.uppercase) score = Math.min(100, score + 5);
+  if (requirements.lowercase) score = Math.min(100, score + 5);
+  if (requirements.numbers) score = Math.min(100, score + 5);
+  if (requirements.specialChars) score = Math.min(100, score + 5);
+  if (password.length > 12) score = Math.min(100, score + 10);
   
   // Penalize for common sequences
-  if (/(123|abc|password|qwerty)/i.test(password)) score -= 20;
+  if (/(123|abc|password|qwerty)/i.test(password)) score = Math.max(0, score - 20);
 
   score = Math.max(0, Math.min(100, score));
 
   let level: PasswordStrength["level"];
-  if (score < 20) level = "Very Weak";
-  else if (score < 40) level = "Weak";
-  else if (score < 60) level = "Fair";
-  else if (score < 85) level = "Strong";
+  if (entropy < 31) level = "Very Weak";
+  else if (entropy < 61) level = "Fair";
+  else if (entropy < 91) level = "Strong";
   else level = "Very Strong";
-  
+
   const timeToCrack = estimateCrackTime(password);
   
-  const charDistributionData = [
-    {
-        name: 'Characters',
-        lowercase: (password.match(/[a-z]/g) || []).length,
-        uppercase: (password.match(/[A-Z]/g) || []).length,
-        numbers: (password.match(/[0-9]/g) || []).length,
-        special: (password.match(/[^A-Za-z0-9]/g) || []).length,
-    }
-  ]
-
-  const { entropy, charsetSize } = calculateEntropy(password);
+  const charDistributionData: CharDistribution = [
+    { name: 'Lowercase', value: (password.match(/[a-z]/g) || []).length, fill: '#3b82f6' },
+    { name: 'Uppercase', value: (password.match(/[A-Z]/g) || []).length, fill: '#a855f7' },
+    { name: 'Numbers', value: (password.match(/[0-9]/g) || []).length, fill: '#f97316' },
+    { name: 'Special', value: (password.match(/[^A-Za-z0-9]/g) || []).length, fill: '#22c55e' },
+  ].filter(item => item.value > 0);
 
   return { 
       strength: { score, level, timeToCrack }, 

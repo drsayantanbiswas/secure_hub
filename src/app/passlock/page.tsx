@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   CheckCircle,
@@ -28,6 +28,7 @@ import {
   analyzePassword,
 } from "@/ai/flows/password-analysis";
 import CharacterDistributionChart from "@/components/passlock/character-distribution-chart";
+import EntropyBar from "@/components/passlock/entropy-bar";
 
 const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
   <div className={`flex items-center gap-2 transition-colors ${met ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -55,6 +56,12 @@ export default function PassLockPage() {
   const [aiAnalysis, setAiAnalysis] = useState<AnalyzePasswordOutput | null>(
     null
   );
+
+  // Client-side state for time to avoid hydration mismatch
+  const [clientLastCheckedTime, setClientLastCheckedTime] = useState<string | null>(null);
+  useEffect(() => {
+    setClientLastCheckedTime(lastCheckedTime);
+  }, [lastCheckedTime]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -157,27 +164,20 @@ export default function PassLockPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary p-3 rounded-md">
                 <Info className="h-5 w-5 shrink-0" />
                 <span>
-                  <strong>Warning:</strong> Password is never sent anywhere. Analysis is
-                  done locally in your browser.
+                  <strong>Privacy First:</strong> Password analysis is
+                  done locally in your browser. Nothing is ever sent to a server.
                 </span>
               </div>
             </CardContent>
           </Card>
-
+          
           <Card>
             <CardHeader>
-                <CardTitle>Strength Meter</CardTitle>
+                <CardTitle>Entropy Analysis</CardTitle>
+                <CardDescription>Measures password randomness in bits of entropy (0-128+ bits).</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex justify-between items-baseline">
-                    <p className="text-lg font-medium">Strength: <span className="font-bold">{password ? strength.level : '...'}</span></p>
-                    <p className="font-mono text-xl font-semibold">{password ? `${strength.score}/100` : ""}</p>
-                </div>
-                <Progress value={strength.score} indicatorClassName={getStrengthColor(strength.level)} />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                    <p>Time to Crack: <span className="font-semibold text-foreground">{password ? strength.timeToCrack : '...'}</span></p>
-                    <p>Entropy: <span className="font-semibold text-foreground">{password ? `${entropy.toFixed(2)} bits` : '...'}</span></p>
-                </div>
+            <CardContent>
+                <EntropyBar entropy={entropy} />
             </CardContent>
           </Card>
            
@@ -267,15 +267,12 @@ export default function PassLockPage() {
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Character Distribution</CardTitle></CardHeader>
+                <CardHeader>
+                    <CardTitle>Character Composition</CardTitle>
+                    <CardDescription>Breakdown of character types used in the password.</CardDescription>
+                </CardHeader>
                 <CardContent>
-                    {password.length > 0 ? (
-                        <CharacterDistributionChart data={charDistribution} />
-                    ) : (
-                        <div className="text-center text-muted-foreground py-8">
-                            <p>Chart will appear here.</p>
-                        </div>
-                    )}
+                    <CharacterDistributionChart data={charDistribution} />
                 </CardContent>
             </Card>
 
@@ -307,11 +304,10 @@ export default function PassLockPage() {
                         <div className="text-destructive">
                             <XCircle className="h-12 w-12 mx-auto mb-4"/>
                             <h3 className="text-xl font-bold">FOUND IN KNOWN BREACHES</h3>
-                            <p className="text-sm">We recommend changing this password immediately!</p>
-                             <Button variant="link" className="text-destructive">Why This Matters</Button>
+                            <p className="text-sm">We recommend changing this password immediately!</p>                             
                         </div>
                     )}
-                    {lastCheckedTime && <Badge variant="outline" className="mt-6">Last checked: {lastCheckedTime}</Badge>}
+                    {clientLastCheckedTime && <Badge variant="outline" className="mt-6">Last checked: {clientLastCheckedTime}</Badge>}
                 </CardContent>
             </Card>
         </div>
