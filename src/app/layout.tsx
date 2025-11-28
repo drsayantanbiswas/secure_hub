@@ -1,9 +1,11 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppHeader } from "@/components/layout/header";
 import { AppFooter } from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { GlobalEffects } from "@/components/global-effects";
 
 export const metadata: Metadata = {
   title: "SecureHub - Your Complete Security Partner",
@@ -39,6 +41,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+            <GlobalEffects />
             <div className="flex min-h-screen flex-col">
               <AppHeader />
               <main className="flex-1">{children}</main>
