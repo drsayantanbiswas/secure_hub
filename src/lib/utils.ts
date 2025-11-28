@@ -19,7 +19,21 @@ export type PasswordRequirements = {
   specialChars: boolean;
 };
 
-export const checkPasswordStrength = (password: string): { strength: PasswordStrength, requirements: PasswordRequirements } => {
+type CharDistribution = {
+    name: string;
+    lowercase: number;
+    uppercase: number;
+    numbers: number;
+    special: number;
+}[];
+
+
+export const checkPasswordStrength = (password: string): { 
+  strength: PasswordStrength, 
+  requirements: PasswordRequirements,
+  entropy: number,
+  charDistribution: CharDistribution
+} => {
   let score = 0;
   const requirements: PasswordRequirements = {
     length: password.length >= 8,
@@ -52,19 +66,47 @@ export const checkPasswordStrength = (password: string): { strength: PasswordStr
   else level = "Very Strong";
   
   const timeToCrack = estimateCrackTime(password);
+  
+  const charDistributionData = [
+    {
+        name: 'Characters',
+        lowercase: (password.match(/[a-z]/g) || []).length,
+        uppercase: (password.match(/[A-Z]/g) || []).length,
+        numbers: (password.match(/[0-9]/g) || []).length,
+        special: (password.match(/[^A-Za-z0-9]/g) || []).length,
+    }
+  ]
 
-  return { strength: { score, level, timeToCrack }, requirements };
+  const { entropy, charsetSize } = calculateEntropy(password);
+
+  return { 
+      strength: { score, level, timeToCrack }, 
+      requirements,
+      entropy,
+      charDistribution: charDistributionData
+    };
 };
 
+function calculateEntropy(password: string) {
+    let charsetSize = 0;
+    if (/[a-z]/.test(password)) charsetSize += 26;
+    if (/[A-Z]/.test(password)) charsetSize += 26;
+    if (/[0-9]/.test(password)) charsetSize += 10;
+    if (/[^A-Za-z0-9]/.test(password)) charsetSize += 32;
+
+    if (charsetSize === 0) return { entropy: 0, charsetSize: 0 };
+
+    const entropy = password.length * Math.log2(charsetSize);
+    return { entropy, charsetSize };
+}
+
+
 function estimateCrackTime(password: string): string {
-    const charsetSize = (/[a-z]/.test(password) ? 26 : 0) +
-                        (/[A-Z]/.test(password) ? 26 : 0) +
-                        (/[0-9]/.test(password) ? 10 : 0) +
-                        (/[^A-Za-z0-9]/.test(password) ? 32 : 0);
+    const { entropy } = calculateEntropy(password);
+    
+    if (entropy === 0) return "instantly";
 
-    if (charsetSize === 0) return "instantly";
-
-    const combinations = Math.pow(charsetSize, password.length);
+    const combinations = Math.pow(2, entropy);
     const guessesPerSecond = 1e12; // Assume 1 trillion guesses/sec for a powerful cracking rig
     const seconds = combinations / guessesPerSecond;
 

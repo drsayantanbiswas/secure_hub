@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,18 @@ import {
   Lock,
   XCircle,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { PasswordStrength, PasswordRequirements, checkPasswordStrength } from "@/lib/utils";
 import { PasswordGeneratorModal } from "@/components/passlock/password-generator-modal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import {
+  AnalyzePasswordOutput,
+  analyzePassword,
+} from "@/ai/flows/password-analysis";
+import CharacterDistributionChart from "@/components/passlock/character-distribution-chart";
 
 const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
   <div className={`flex items-center gap-2 transition-colors ${met ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -41,21 +47,45 @@ export default function PassLockPage() {
   const [breachStatus, setBreachStatus] = useState<'checking' | 'safe' | 'atRisk' | 'idle'>('idle');
   const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
   
-  const { strength, requirements } = useMemo(() => checkPasswordStrength(password), [password]);
+  const { strength, requirements, entropy, charDistribution } = useMemo(() => checkPasswordStrength(password), [password]);
+  
+  const [isAiPending, startAiTransition] = useTransition();
+  const [aiAnalysis, setAiAnalysis] = useState<AnalyzePasswordOutput | null>(
+    null
+  );
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+        if (password.length > 3) {
+            startAiTransition(async () => {
+                const analysis = await analyzePassword({ password });
+                setAiAnalysis(analysis);
+            });
+        } else {
+            setAiAnalysis(null);
+        }
+    }, 500); // Debounce AI call
+
+    return () => {
+        clearTimeout(handler);
+    };
+  }, [password]);
+  
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (password.length > 0) {
       setBreachStatus('checking');
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         // Mock breach check
         setBreachStatus(password.includes('123') ? 'atRisk' : 'safe');
         setLastCheckedTime(new Date().toLocaleTimeString());
       }, 1500);
-      return () => clearTimeout(timer);
     } else {
       setBreachStatus('idle');
       setLastCheckedTime(null);
     }
+    
+    return () => clearTimeout(timer);
   }, [password]);
   
   const handleCopyToClipboard = () => {
@@ -141,9 +171,65 @@ export default function PassLockPage() {
                     <p className="font-mono text-xl font-semibold">{password ? `${strength.score}/100` : ""}</p>
                 </div>
                 <Progress value={strength.score} indicatorClassName={getStrengthColor(strength.level)} />
-                <p className="text-sm text-muted-foreground">Time to Crack: <span className="font-semibold text-foreground">{password ? strength.timeToCrack : '...'}</span></p>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                    <p>Time to Crack: <span className="font-semibold text-foreground">{password ? strength.timeToCrack : '...'}</span></p>
+                    <p>Entropy: <span className="font-semibold text-foreground">{password ? `${entropy.toFixed(2)} bits` : '...'}</span></p>
+                </div>
             </CardContent>
           </Card>
+           
+           <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-accent" />
+                        AI-Powered Analysis
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                {isAiPending && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>AI is analyzing your password...</span>
+                    </div>
+                )}
+                {!isAiPending && aiAnalysis && (
+                    <div className="space-y-4 text-sm">
+                        <div>
+                            <h4 className="font-semibold mb-2">Improvement Suggestion</h4>
+                            <p className="bg-accent/20 p-2 rounded-md text-accent-foreground/90">
+                                {aiAnalysis.improvementSuggestion}
+                            </p>
+                        </div>
+                         {aiAnalysis.predictablePatterns.length > 0 && (
+                            <div>
+                                <h4 className="font-semibold mb-1">Predictable Patterns</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {aiAnalysis.predictablePatterns.map(p => (
+                                        <Badge key={p.segment} variant="destructive">{p.patternType}: "{p.segment}"</Badge>
+                                    ))}
+                                </div>
+                            </div>
+                         )}
+                         {aiAnalysis.commonAttackTechniques.length > 0 && (
+                            <div>
+                                <h4 className="font-semibold mb-1">Vulnerable To</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {aiAnalysis.commonAttackTechniques.map(a => (
+                                        <Badge key={a.technique} variant="outline">{a.technique}</Badge>
+                                    ))}
+                                </div>
+                            </div>
+                         )}
+                    </div>
+                )}
+                {!isAiPending && !aiAnalysis && password.length > 3 && (
+                    <p className="text-sm text-muted-foreground">AI analysis will appear here.</p>
+                )}
+                 {!password && (
+                    <p className="text-sm text-muted-foreground">Enter a password to get AI analysis.</p>
+                 )}
+                </CardContent>
+           </Card>
 
           <Card>
             <CardHeader>
@@ -158,7 +244,6 @@ export default function PassLockPage() {
                 <Button variant="secondary" disabled={!password}>Use for Quiz Challenge</Button>
             </CardContent>
           </Card>
-
         </div>
 
         <div className="space-y-8">
@@ -175,6 +260,19 @@ export default function PassLockPage() {
                     <p className="text-sm text-accent-foreground/80 bg-accent/20 p-2 rounded-md mt-4">
                         <strong>Next tip:</strong> A great password is long and includes a mix of all character types.
                     </p>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader><CardTitle>Character Distribution</CardTitle></CardHeader>
+                <CardContent>
+                    {password.length > 0 ? (
+                        <CharacterDistributionChart data={charDistribution} />
+                    ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                            <p>Chart will appear here.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
