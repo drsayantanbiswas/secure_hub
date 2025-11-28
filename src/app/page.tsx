@@ -9,6 +9,7 @@ import {
   BarChart,
 } from "lucide-react";
 import Link from "next/link";
+import InteractivePixelCanvas from "@/components/interactive-pixel-canvas";
 
 const featureCards = [
   {
@@ -95,8 +96,9 @@ const whySecureHub = [
 export default function Home() {
   return (
     <div className="flex flex-col items-center">
-      <section className="w-full bg-gradient-to-br from-background via-card to-background py-20 md:py-32">
-        <div className="container mx-auto px-4 text-center">
+      <section className="w-full relative h-screen">
+        <InteractivePixelCanvas />
+        <div className="container mx-auto px-4 text-center absolute inset-0 flex flex-col items-center justify-center">
           <div className="flex justify-center items-center gap-4 mb-4">
             <Lock className="h-12 w-12 text-primary" />
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight font-headline">
