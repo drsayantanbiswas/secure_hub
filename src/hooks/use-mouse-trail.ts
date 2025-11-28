@@ -26,17 +26,19 @@ class Particle {
     if (isBurst) {
         this.element.style.width = `${Math.random() * 5 + 2}px`;
         this.element.style.height = this.element.style.width;
-        this.element.style.background = `hsl(${Math.random() * 60 + 280}, 90%, 70%)`; // Pinks, Purples
+        this.element.style.background = `hsl(${Math.random() * 60 + 180}, 90%, 70%)`; // Cyans, Blues, Purples
         const angle = Math.random() * 2 * Math.PI;
         const speed = Math.random() * 4 + 2;
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
         this.life = 1;
     } else {
-        this.element.style.width = '12px';
-        this.element.style.height = '12px';
-        this.element.style.background = 'radial-gradient(circle, rgba(147,51,234,0.6) 0%, rgba(147,51,234,0) 60%)';
-        this.element.style.transition = `opacity 0.5s ${index * 0.03}s, transform 0.2s ${index * 0.03}s`;
+        this.element.style.width = '10px';
+        this.element.style.height = '10px';
+        const hue = (index / NUM_PARTICLES) * 180 + 180; // Cycle through blues, purples, and pinks
+        this.element.style.background = `hsl(${hue}, 80%, 60%)`;
+        this.element.style.boxShadow = `0 0 10px hsl(${hue}, 80%, 60%)`;
+        this.element.style.transition = `opacity 0.5s ${index * 0.02}s, transform 0.2s ${index * 0.02}s`;
         this.vx = 0;
         this.vy = 0;
         this.life = -1; // Infinite life for trail
@@ -62,7 +64,7 @@ class Particle {
         const dist = Math.sqrt(dx * dx + dy * dy);
         const scale = Math.min(Math.max(0.8, 1 - dist / 200), 1.2);
 
-        this.element.style.transform = `translate(${this.x}px, ${this.y}px) scale(${scale})`;
+        this.element.style.transform = `translate(${this.x - 5}px, ${this.y - 5}px) scale(${scale})`;
         this.element.style.opacity = '1';
     }
   }
@@ -125,8 +127,10 @@ export const useMouseTrail = () => {
     }
     
     // Initialize trail particles
-    for (let i = 0; i < NUM_PARTICLES; i++) {
-        particlesRef.current.push(new Particle(-100, -100, i, false));
+    if (particlesRef.current.length === 0) {
+      for (let i = 0; i < NUM_PARTICLES; i++) {
+          particlesRef.current.push(new Particle(-100, -100, i, false));
+      }
     }
 
     document.addEventListener('mousemove', handleMouseMove);
