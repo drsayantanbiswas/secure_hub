@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes';
 const InteractivePixelCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameId = useRef<number>();
-  const mouse = useRef({ x: 0, y: 0 });
+  const mouse = useRef({ x: 0, y: 0, clicked: false });
   const particles = useRef<any[]>([]);
   const { resolvedTheme } = useTheme();
 
@@ -14,10 +14,11 @@ const InteractivePixelCanvas = () => {
   const particleCount = 1000;
   const mouseInfluence = 150;
   const particleBaseSpeed = 0.5;
+  const connectionDistance = 100; // Max distance for lines between particles
 
   useEffect(() => {
     // Initialize mouse position only on the client
-    mouse.current = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    mouse.current = { x: window.innerWidth / 2, y: window.innerHeight / 2, clicked: false };
   }, []);
 
   // --- Utility Functions ---
@@ -47,16 +48,35 @@ const InteractivePixelCanvas = () => {
         this.baseY = this.y;
     }
 
-    draw(ctx: CanvasRenderingContext2D, width: number, height: number) {
-      ctx.beginPath();
+    // This method will now return the projected coordinates and scale
+    getProjected() {
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: 0, y: 0, scale: 0, r: 0 };
+      const { width, height } = canvas.getBoundingClientRect();
       const scale = width / (width + this.z);
       const x = this.x * scale + width / 2;
       const y = this.y * scale + height / 2;
       const r = this.radius * scale;
+      return { x, y, scale, r };
+    }
+
+    draw(ctx: CanvasRenderingContext2D, width: number, height: number, dx: number, dy: number, dist: number) {
+      const { x, y, r, scale } = this.getProjected();
       
-      const particleColor = resolvedTheme === 'light' ? `rgba(15, 23, 42, ${scale * 0.6})` : `rgba(173, 216, 230, ${scale * 0.8})`; // Light blue for dark theme
+      let opacity = scale * 0.8;
+      let finalRadius = r;
+
+      // Glow and scale effect on mouse proximity
+      if (dist < mouseInfluence) {
+          const proximity = 1 - (dist / mouseInfluence);
+          opacity = Math.min(1, opacity + proximity * 0.5);
+          finalRadius = r + proximity * 2;
+      }
+      
+      const particleColor = resolvedTheme === 'light' ? `rgba(15, 23, 42, ${opacity})` : `rgba(34, 211, 238, ${opacity})`;
+      ctx.beginPath();
       ctx.fillStyle = particleColor;
-      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.arc(x, y, finalRadius, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -69,23 +89,31 @@ const InteractivePixelCanvas = () => {
             this.y = getRandom(-height, height);
         }
 
-        const dx = this.x - (mouse.current.x - width / 2);
-        const dy = this.y - (mouse.current.y - height / 2);
+        const dx = this.x * (width / (width + this.z)) - (mouse.current.x - width / 2);
+        const dy = this.y * (height / (height + this.z)) - (mouse.current.y - height / 2);
         const dist = Math.sqrt(dx * dx + dy * dy);
 
+        // Mouse attraction / repulsion
         if (dist < mouseInfluence) {
             const forceDirectionX = dx / dist;
             const forceDirectionY = dy / dist;
             const force = (mouseInfluence - dist) / mouseInfluence;
-            this.vx += forceDirectionX * force * 0.05;
-            this.vy += forceDirectionY * force * 0.05;
+            
+            // If clicked, push away (explosion)
+            if (mouse.current.clicked) {
+              this.vx -= forceDirectionX * force * 2;
+              this.vy -= forceDirectionY * force * 2;
+            } else { // Otherwise, attract
+              this.vx += forceDirectionX * force * 0.1;
+              this.vy += forceDirectionY * force * 0.1;
+            }
         }
 
         this.x += this.vx;
         this.y += this.vy;
 
-        this.vx *= 0.98;
-        this.vy *= 0.98;
+        this.vx *= 0.96; // Damping
+        this.vy *= 0.96; // Damping
     }
   }
 
@@ -118,29 +146,61 @@ const InteractivePixelCanvas = () => {
     const width = rect.width;
     const height = rect.height;
 
-    // Create gradient
+    // Create gradient based on theme
     let gradient;
     if (resolvedTheme === 'dark') {
       gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#000000');  // Black
-      gradient.addColorStop(0.5, '#000080'); // Navy
-      gradient.addColorStop(1, '#4b0082');   // Indigo/Purple
+      gradient.addColorStop(0, '#020617'); // slate-950
+      gradient.addColorStop(0.5, '#0f172a'); // slate-900
+      gradient.addColorStop(1, '#1e293b'); // slate-800
     } else {
       gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#ffffff');
-      gradient.addColorStop(1, '#e2e8f0');
+      gradient.addColorStop(0, '#f8fafc'); // slate-50
+      gradient.addColorStop(1, '#e2e8f0'); // slate-200
     }
-
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
+    
+    // Draw constellation lines
+    for (let i = 0; i < particles.current.length; i++) {
+        for (let j = i + 1; j < particles.current.length; j++) {
+            const p1 = particles.current[i];
+            const p2 = particles.current[j];
+            const p1Coords = p1.getProjected();
+            const p2Coords = p2.getProjected();
+            
+            const dist = Math.sqrt((p1Coords.x - p2Coords.x)**2 + (p1Coords.y - p2Coords.y)**2);
+
+            if (dist < connectionDistance) {
+                const opacity = 1 - (dist / connectionDistance);
+                ctx.beginPath();
+                ctx.strokeStyle = resolvedTheme === 'dark' ? `rgba(34, 211, 238, ${opacity * 0.2})` : `rgba(15, 23, 42, ${opacity * 0.1})`;
+                ctx.moveTo(p1Coords.x, p1Coords.y);
+                ctx.lineTo(p2Coords.x, p2Coords.y);
+                ctx.stroke();
+            }
+        }
+    }
+
+    // Update and draw particles
     particles.current.forEach(p => {
         p.update(width, height);
-        p.draw(ctx, width, height);
+        const {x, y} = p.getProjected();
+        const dx = x - mouse.current.x;
+        const dy = y - mouse.current.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        p.draw(ctx, width, height, dx, dy, dist);
     });
+
     ctx.restore();
+
+    // Reset click state after one frame
+    if (mouse.current.clicked) {
+        mouse.current.clicked = false;
+    }
 
     animationFrameId.current = requestAnimationFrame(animate);
   }, [resolvedTheme]);
@@ -170,10 +230,15 @@ const InteractivePixelCanvas = () => {
             mouse.current.y = e.touches[0].clientY - rect.top;
         }
     };
+    
+    const handleClick = () => {
+      mouse.current.clicked = true;
+    }
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('click', handleClick);
 
     return () => {
       if (animationFrameId.current) {
@@ -182,6 +247,7 @@ const InteractivePixelCanvas = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('click', handleClick);
     };
   }, [initCanvas, animate]);
 
@@ -189,3 +255,4 @@ const InteractivePixelCanvas = () => {
 };
 
 export default InteractivePixelCanvas;
+
