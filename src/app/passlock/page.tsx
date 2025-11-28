@@ -39,6 +39,7 @@ export default function PassLockPage() {
   const { toast } = useToast();
   const [isGeneratorOpen, setGeneratorOpen] = useState(false);
   const [breachStatus, setBreachStatus] = useState<'checking' | 'safe' | 'atRisk' | 'idle'>('idle');
+  const [lastCheckedTime, setLastCheckedTime] = useState<string | null>(null);
   
   const { strength, requirements } = useMemo(() => checkPasswordStrength(password), [password]);
 
@@ -48,10 +49,12 @@ export default function PassLockPage() {
       const timer = setTimeout(() => {
         // Mock breach check
         setBreachStatus(password.includes('123') ? 'atRisk' : 'safe');
+        setLastCheckedTime(new Date().toLocaleTimeString());
       }, 1500);
       return () => clearTimeout(timer);
     } else {
       setBreachStatus('idle');
+      setLastCheckedTime(null);
     }
   }, [password]);
   
@@ -207,7 +210,7 @@ export default function PassLockPage() {
                              <Button variant="link" className="text-destructive">Why This Matters</Button>
                         </div>
                     )}
-                    <Badge variant="outline" className="mt-6">Last checked: {new Date().toLocaleTimeString()}</Badge>
+                    {lastCheckedTime && <Badge variant="outline" className="mt-6">Last checked: {lastCheckedTime}</Badge>}
                 </CardContent>
             </Card>
         </div>
